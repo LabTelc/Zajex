@@ -2,7 +2,7 @@ from PyQt5.QtCore import pyqtSignal, QTimer, Qt
 from PyQt5.QtWidgets import QComboBox
 
 
-class CustomComboBox(QComboBox):
+class ClickHoldComboBox(QComboBox):
     save_signal = pyqtSignal(str, name='name')
 
     def __init__(self, parent=None):

@@ -29,3 +29,4 @@ class MPLSimpleCanvas(QWidget):
         self.layout.setSpacing(0)
 
         self.setLayout(self.layout)
+        self.canvas.draw()

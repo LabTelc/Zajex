@@ -1,36 +1,49 @@
+import queue
 from PyQt5.QtCore import pyqtSignal, QThread, QMutex, QWaitCondition
-
 import numpy as np
+from PIL import Image as Image
+import tifffile
+import EZRT
 
 
 class ImageLoaderThread(QThread):
-    image_loaded = pyqtSignal(np.ndarray, name="image_loaded")
-    error_produced = pyqtSignal(str, name='Error')
+    image_loaded = pyqtSignal(tuple, name="image_loaded")
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, image_queue: queue.Queue = None):
         super().__init__(parent=parent)
         self.mutex = QMutex()
         self.condition = QWaitCondition()
-        self.params = None
-        self.image_path = None
+        self.image_queue = image_queue
 
     def run(self):
         self.wait_for_signal()
         while not self.isInterruptionRequested():
-            if self.image_path:
+            while not self.image_queue.empty():
+                filepath, params, slot = self.image_queue.get()
+                fex = filepath.split('.')[-1]
+                arr = None
                 try:
-                    arr = np.memmap(self.image_path, dtype=self.params.dtype_in, mode='r', shape=self.params.shape)
-                except OSError:
+                    if fex == "bin":
+                        arr = np.fromfile(filepath, dtype=self.params.dtype_in)
+                        arr = arr.reshape(self.params.shape)
+                    elif fex == 'txt':
+                        with open(filepath, 'r') as f:
+                            arr = np.array([[x for x in line.split()] for line in f], self.params.dtype)
+                    elif fex == 'raw':
+                        _, arr = EZRT.loadImage(filepath)
+                    elif fex in ['jpg', 'jpeg', 'png']:
+                        arr = Image.open(filepath)
+                        arr = np.array(arr.convert('L'))
+                    elif fex in ['tiff', 'tif']:
+                        arr = tifffile.imread(filepath)
+                        if arr.shape > 2:
+                            if arr.shape[2] > 3:
+                                arr = arr[:, :, :3]
+                            arr = np.dot(arr, [0.299, 0.587, 0.114])
+                except Exception as e:
                     arr = None
-                arr = np.array(arr)
-                if arr is None:
-                    self.image_path = None
-                    self.error_produced.emit("Invalid file or input parameters")
-                if self.params.mirror:
-                    arr = np.flip(arr)
-                arr = np.rot90(arr, k=-self.params.rotate)
-                self.image_loaded.emit(arr)
-                self.image_path = None
+                    filepath = e
+                self.image_loaded.emit((arr, filepath, slot))
                 self.wait_for_signal()
 
     def wait_for_signal(self):
@@ -38,14 +51,7 @@ class ImageLoaderThread(QThread):
         self.condition.wait(self.mutex)
         self.mutex.unlock()
 
-    def set_image_path(self, image_path):
-        self.image_path = image_path
-        self.mutex.lock()
-        self.condition.wakeAll()
-        self.mutex.unlock()
-
-    def set_params(self, params):
-        self.params = params
+    def wake(self):
         self.mutex.lock()
         self.condition.wakeAll()
         self.mutex.unlock()

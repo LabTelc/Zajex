@@ -5,39 +5,33 @@ Created on 29.01.2024
 @author: Zajicek
 @author: Vopalensky
 """
-
-from dataclasses import dataclass
+import os
 import sys
+from argparse import ArgumentParser
+from dataclasses import dataclass
+from queue import Queue
 
+from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
-from PyQt5.QtWidgets import QApplication
 
+from ui_elements_classes.CustomStandardItem import CustomStandardItem
+from ui_elements_classes.FileInfoDialog import FileInfoDialog
 from ui_elements_classes.Palletes import *
+from utils.global_vars import *
+from utils.utils import validate_input
+from utils.ImageLoaderThread import ImageLoaderThread
 
-supportedLoadFormats = ['raw', 'bin', 'txt']
-supportedSaveFormats = ['raw', 'bin', 'txt', 'tif', 'jpg']
-supportedDataTypes = ['int8', 'int16', 'int32', 'int64',
-                      'uint8', 'uint16', 'uint32', 'uint64',
-                      'float8', 'float16', 'float32', 'float64']
-
-limits_dict = {0: "min - max", 1: "1 - 99", 2: "5 - 95", 3: "(min+1) - (max-1)"}
-cmaps_list = ['gray', 'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'Greys', 'Purples', 'Blues', 'Greens',
-              'Oranges', 'Reds', 'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu', 'GnBu', 'PuBu', 'YlGnBu',
-              'PuBuGn', 'BuGn', 'YlGn', 'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink', 'spring', 'summer',
-              'autumn', 'winter', 'cool', 'Wistia', 'hot', 'afmhot', 'gist_heat', 'copper', 'PiYG', 'PRGn', 'BrBG',
-              'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
-
-Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/MainWindow2.ui')
+Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/MainWindow.ui')
 
 
 @dataclass
 class Parameters:
-    ftype: str = 'bin'
     dtype: str = 'uint16'
-    width: int = 4096
-    height: int = 4096
+    header: int = 0
+    width: int = 0
+    height: int = 0
     lower: float = 0
-    upper: float = 65535
+    upper: float = 0
     x_lim: tuple = (0, width)
     y_lim: tuple = (height, 0)
     rotate: int = 0
@@ -45,23 +39,52 @@ class Parameters:
     mirror_LR: bool = False
     cmap: str = 'gray'
     from_zoom: bool = False
+    last_dir: str = "./"
 
 
 class Main(QMainWindow, Ui_MainWindow):
-    def __init__(self, ):
+    def __init__(self, args):
         super(Main, self).__init__()
         self.setupUi(self)
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
         self.parameters = Parameters()
+        if args.shape is not None:
+            self.parameters.width, self.parameters.height = args.shape
         self.palette = 'dark'
 
-        app.setPalette(self.palettes['dark'])
+        app.setPalette(self.palettes['dark'], )
 
         input_handling_functions = self._input_handling_functions()
         for signal in input_handling_functions.keys():
             signal.connect(input_handling_functions[signal])
 
+        self.combo_boxes = {
+            "a": self.cb_images_a,
+            "b": self.cb_images_b,
+            "c": self.cb_images_c,
+            "d": self.cb_images_d,
+        }
+        self.images = {}
+        self.sliders = {
+            "a": self.slider_a,
+            "b": self.slider_b,
+            "c": self.slider_c,
+            "d": self.slider_d,
+            "lower": self.slider_lower,
+            "upper": self.slider_upper
+        }
+        self.spin_boxes = {
+            "lower": self.dsb_lower,
+            "upper": self.dsb_upper,
+            "rows_from": self.sb_rows_from,
+            "rows_to": self.sb_rows_to,
+            "columns_from": self.sb_columns_from,
+            "columns_to": self.sb_columns_to,
+        }
         self._init_gui_values()
+        self.loader = ImageLoaderThread(self)
+        self.image_queue = Queue()
+        self.id_gen = self.id_generator()
 
     def _init_gui_values(self):
         for cmap in cmaps_list:
@@ -74,6 +97,9 @@ class Main(QMainWindow, Ui_MainWindow):
 
         for r in limits_dict.values():
             self.cb_auto_range.addItem(r)
+
+        for s in self.sliders.values():
+            s.setMaximum(0)
 
     def _input_handling_functions(self):
         return {
@@ -114,7 +140,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.cb_save_c.save_signal: self._cb_save_handler,
             self.slider_c.valueChanged: self._slider_handler,
             # - Operation
-            self.cb_images_r.currentIndexChanged: self._cb_images_handler,
+            self.cb_images_d.currentIndexChanged: self._cb_images_handler,
             self.le_operation.returnPressed: self._le_operation_handler,
             self.pb_save_all_calculated.clicked: self._pb_save_all_handler,
             self.slider_d.valueChanged: self._slider_handler,
@@ -126,10 +152,17 @@ class Main(QMainWindow, Ui_MainWindow):
         self._update()
 
     def _slider_limits_handler(self, event):
-        print(event)
+        slider = self.sender().objectName().split('_')[-1]
+        self.spin_boxes[slider].blockSignals(True)
+        self.spin_boxes[slider].setValue(event)
+        self.spin_boxes[slider].blockSignals(False)
+        self._update()
 
     def _dsb_limits_handler(self, event):
-        print(event)
+        spin_box = self.sender().objectName().split('_')[-1]
+        self.sliders[spin_box].blockSignals(True)
+        self.sliders[spin_box].setValue(int(event))
+        self.sliders[spin_box].blockSignals(False)
         self._update()
 
     def _cb_auto_range_handler(self, event):
@@ -167,28 +200,99 @@ class Main(QMainWindow, Ui_MainWindow):
         print(event)
 
     def _cb_images_handler(self, event):
-        print(event)
+        group = self.sender().objectName().split('_')[-1]
+        self.sliders[group].blockSignals(True)
+        self.sliders[group].setValue(event)
+        self.sliders[group].blockSignals(False)
 
-    def _pb_load_handler(self, event):
-        print(event)
+    def _pb_load_handler(self):
+        group = self.sender().objectName().split("_")[-1]
+        combo_box = self.combo_boxes[group]
+
+        filenames, filter_ = QFileDialog.getOpenFileNames(self, "Load images...",
+                                                          self.parameters.last_dir, lFileTypeString,
+                                                          initialFilter="All files (*.*)")
+        if not filenames:
+            return
+        self.parameters.last_dir = filenames[0][:filenames[0].rfind("/")]
+
+        for filepath in filenames:
+            valid = False
+            while not valid:
+                valid = validate_input(filepath, self.parameters)
+                if valid is None or valid:
+                    break
+                dialog = FileInfoDialog(self, self.parameters, ftype=filepath.split(".")[-1])
+                if dialog.exec_() == QDialog.Accepted:
+                    self.parameters.width = dialog.result["width"]
+                    self.parameters.height = dialog.result["height"]
+                    self.parameters.dtype = dialog.result["dtype"]
+                else:
+                    valid = None
+                    break
+            if valid is None:
+                self.log(f"File {filepath} could not be loaded.", LogTypes.Error)
+            else:
+                self.image_queue.put(filepath)
+
+        self.loader.wake()
 
     def _cb_save_handler(self, event):
         print(event)
 
     def _slider_handler(self, event):
-        print(event)
+        group = self.sender().objectName().split("_")[-1]
+        self.combo_boxes[group].blockSignals(True)
+        self.combo_boxes[group].setCurrentIndex(event)
+        self.combo_boxes[group].blockSignals(False)
 
     def _le_operation_handler(self, event):
         print(event)
 
+    def _image_loader_handler(self, event):
+        arr, filepath, slot = event
+        if arr is not None:
+            im_id = next(self.id_gen)
+            self.images[im_id] = arr
+            item = CustomStandardItem(im_id)
+            item.setName(filepath.split("/")[-1])
+            item.setToolTip(filepath)
+            self.combo_boxes[slot].add_custom_item(item)
+            self.log(f"File {filepath} loaded.", LogTypes.Log)
+        else:
+            self.log(filepath, LogTypes.Error)
+
     def _update(self):
         print("Update")
 
+    def log(self, text, log_type=LogTypes.Log):
+        if log_type == LogTypes.Log:
+            text = f"{text}"
+        elif log_type == LogTypes.Warning:
+            text = f"<font color='yellow'>Warning: {text}</font>"
+        elif log_type == LogTypes.Error:
+            text = f"<font color='red'>{text}</font>"
+        self.log_widget.append(text)
+
+    @staticmethod
+    def id_generator():
+        current_id = 0
+        while True:
+            yield current_id
+            current_id += 1
+
 
 if __name__ == '__main__':
+    parser = ArgumentParser(
+        prog="Vopex 3.0",
+        description='',
+        epilog="")
+    parser.add_argument("-s", "--shape", nargs=2, type=int, metavar=("width", "height"),
+                        help="Shape of input images")
+    cmd_args = parser.parse_args()
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    main = Main()
+    main = Main(cmd_args)
 
     main.show()
     app.exec_()
