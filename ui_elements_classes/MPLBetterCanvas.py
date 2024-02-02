@@ -5,24 +5,19 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import RectangleSelector
 
-from utils.ImageLoaderThread import ImageLoaderThread
-
 import numpy as np
-import os
 
 list_item = 'application/x-qabstractitemmodeldatalist'
 
 
 class MPLBetterCanvas(QWidget):
-    image_updated = pyqtSignal(str, name='image updated')
-    prev_ = pyqtSignal(name='prev')
-    next_ = pyqtSignal(name='next')
+    selection_changed = pyqtSignal(name='image updated')
 
     def __init__(self, parent=None):
         super().__init__(parent)
         # MPL Canvas
-        self.fig = plt.figure()
-        self.ax = self.fig.add_axes([0, 0, 1, 1])
+        self.fig = plt.figure(figsize=(20, 20))
+        self.ax = self.fig.add_axes((0, 0, 1, 1))
         self.canvas = FigureCanvas(self.fig)
         self.canvas.mpl_connect('scroll_event', self.on_scroll)
         self.canvas.mpl_connect("motion_notify_event", self.on_mouse_move)
@@ -43,42 +38,38 @@ class MPLBetterCanvas(QWidget):
         self.customContextMenuRequested.connect(self.canvas_menu)
         # Image showing
         self.params = None
-        self.image_path = None
+        self.im_id = None
         self.image_array = None
         self.cbar = None
         self.xlim = 0, 0
         self.ylim = 0, 0
         self.colorbar = None
-        self.loader = ImageLoaderThread()
-        self.loader.image_loaded.connect(self.image_loaded)
-        self.loader.start()
 
     def _imshow(self):
         if self.image_array is None:
             return
-        self.settings.update_limits()
         self.fig.delaxes(self.ax)
         if self.colorbar is not None:
             self.cax.clear()
             self.cax.axis('off')
             self.colorbar = None
         arr = self.image_array
-        if not self.colorbar and not self.settings.show_axis:
-            self.ax = self.fig.add_axes([0, 0, 1, 1])
-        elif self.colorbar and not self.settings.show_axis:
-            self.ax = self.fig.add_axes([0, 0, 1, 0.9])
-        elif not self.colorbar and self.settings.show_axis:
-            self.ax = self.fig.add_axes([0, 0.1, 0.95, 0.9])
-        elif self.colorbar and self.settings.show_axis:
-            self.ax = self.fig.add_axes([0, 0.1, 0.95, 0.8])
-        self.im = self.ax.imshow(arr, cmap=self.settings.cmap, vmin=self.settings.vmin, vmax=self.settings.vmax)
+        if not self.colorbar and not self.params.show_axis:
+            self.ax = self.fig.add_axes((0, 0, 1, 1))
+        elif self.colorbar and not self.params.show_axis:
+            self.ax = self.fig.add_axes((0, 0, 1, 0.9))
+        elif not self.colorbar and self.params.show_axis:
+            self.ax = self.fig.add_axes((0, 0.1, 0.95, 0.9))
+        elif self.colorbar and self.params.show_axis:
+            self.ax = self.fig.add_axes((0, 0.1, 0.95, 0.8))
+        self.im = self.ax.imshow(arr, cmap=self.params.cmap, vmin=self.params.vmin, vmax=self.params.vmax)
 
-        self.ax.get_xaxis().set_visible(self.settings.show_axis)
-        self.ax.get_yaxis().set_visible(self.settings.show_axis)
+        self.ax.get_xaxis().set_visible(self.params.show_axis)
+        self.ax.get_yaxis().set_visible(self.params.show_axis)
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
-        if self.settings.colorbar:
-            self.cax = self.fig.add_axes([0.9, 0.05, 0.01, 0.8])
+        if self.params.colorbar:
+            self.cax = self.fig.add_axes((0.9, 0.05, 0.01, 0.8))
             self.cax.axis('on')
             self.cax.set_frame_on(False)
             self.colorbar = self.fig.colorbar(self.im, cax=self.cax, ax=self.ax)
@@ -86,30 +77,30 @@ class MPLBetterCanvas(QWidget):
                                                minspany=5)
         self.ax.set_frame_on(False)
         self.canvas.draw()
-        self.image_updated.emit("Image updated")
 
-    def image_loaded(self, im):
-        if not isinstance(im, np.ndarray) or self.image_path is None:
-            return
-        self.params = self.window().params
-        self.parent().setTitle(f"Projection preview: {self.image_path.split('/')[-1]}")
+    def show_image(self, im, filename, im_id):
+        self.im_id = im_id
+        self.params = self.window().parameters
+        self.parent().setTitle(f"Image: {filename}")
         self.image_array = im
-        self.settings.custom = False
-        self.xlim = 0, self.image_array.shape[0]
-        self.ylim = self.image_array.shape[1], 0
+        self.xlim = 0, self.image_array.shape[1]
+        self.ylim = self.image_array.shape[0], 0
         self._imshow()
 
-    def dragMoveEvent(self, event):
+    def redraw(self):
+        self._imshow()
+
+    def dragMoveEvent(self, event, **kwargs):
         data = event.mimeData()
         if data.hasFormat(list_item):
             event.acceptProposedAction()
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event, **kwargs):
         data = event.mimeData()
         if data.hasFormat(list_item):
             event.acceptProposedAction()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event, **kwargs):
         data = event.mimeData()
         if data.hasFormat(list_item):
             data = data.data(list_item)
@@ -117,16 +108,12 @@ class MPLBetterCanvas(QWidget):
             a = data.indexOf(b'\xca')
             b = data.indexOf(b'\n', a)
             filepath = str(data[(a + 1):b], 'utf-8')
-            if os.path.exists(filepath):
-                self.image_path = filepath
-                self.loader.set_params(self.window().params)
-                self.loader.set_image_path(filepath)
 
     def on_mouse_move(self, event):
         if event.inaxes and self.image_array is not None:
             x, y = event.xdata, event.ydata
 
-            if x >= self.window().params.shape[0] or y >= self.window().params.shape[1]:
+            if x >= self.window().parameters.height or y >= self.window().parameters.width:
                 return
             try:
                 value = self.image_array[int(y + .5)][int(x + .5)]
@@ -136,25 +123,29 @@ class MPLBetterCanvas(QWidget):
         else:
             self.label.setText("")
 
+    def _selection_changed(self):
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim)
+        self.window().parameters.x_lim = self.xlim
+        self.window().parameters.y_lim = self.ylim
+        self.canvas.draw()
+        self.selection_changed.emit()
+
     def on_select(self, eclick, erelease):
         x_min, x_max = min(eclick.xdata, erelease.xdata), max(eclick.xdata, erelease.xdata)
         y_min, y_max = min(eclick.ydata, erelease.ydata), max(eclick.ydata, erelease.ydata)
 
         if abs(x_max - x_min) < 5 or abs(y_max - y_min) < 5:
             return
-        self.xlim = x_min, x_max
-        self.ylim = y_max, y_min
-        self.ax.set_xlim(self.xlim)
-        self.ax.set_ylim(self.ylim)
-        self.canvas.draw()
+        self.xlim = int(x_min), int(x_max)
+        self.ylim = int(y_max), int(y_min)
+        self._selection_changed()
 
     def on_double_click(self, event):
         if event.button == 1 and event.dblclick and self.image_array is not None:
-            self.xlim = 0, self.image_array.shape[0]
-            self.ylim = self.image_array.shape[1], 0
-            self.ax.set_xlim(self.xlim)
-            self.ax.set_ylim(self.ylim)
-            self.canvas.draw()
+            self.xlim = 0, self.image_array.shape[1]
+            self.ylim = self.image_array.shape[0], 0
+            self._selection_changed()
 
     def canvas_menu(self, pos):
         menu = QMenu()
@@ -180,16 +171,14 @@ class MPLBetterCanvas(QWidget):
                 y_lim_r = smaller(self.ylim[1] + (center_y - self.ylim[1]) * factor, 0)
                 if x_lim_r - x_lim_l < 5 or y_lim_l - y_lim_r < 5:
                     return
-                self.xlim = x_lim_l, x_lim_r
-                self.ylim = y_lim_l, y_lim_r
-                self.ax.set_xlim(self.xlim)
-                self.ax.set_ylim(self.ylim)
-                self.canvas.draw()
-            else:
-                if event.step > 0:
-                    self.next_.emit()
-                else:
-                    self.prev_.emit()
+                self.xlim = int(x_lim_l), int(x_lim_r)
+                self.ylim = int(y_lim_l), int(y_lim_r)
+                self._selection_changed()
+            # else:
+            #     if event.step > 0:
+            #         self.next_.emit()
+            #     else:
+            #         self.prev_.emit()
 
 
 def smaller(number, const):

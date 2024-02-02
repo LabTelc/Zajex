@@ -15,7 +15,7 @@ def validate_input(filepath, parameters):
                 return False
         else:
             return False
-    elif ft in ["png", "jpg", "jpeg", 'txt', 'raw']:
+    elif ft in ["png", "jpg", "jpeg", 'txt', 'raw', 'tiff', 'tif']:
         return True
     else:
         return None

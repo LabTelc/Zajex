@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
-
 import numpy as np
 from struct import unpack, pack
 
@@ -81,7 +74,9 @@ class Header(object):
     nLengthUserString = 1024
 
     def __init__(self, headerUnpacked=None,
-                 headerPacked=None):  # headerPacked is the 2048 bytes as read from a binary file, headerUnpacked is a tuple containing the decoded values
+                 headerPacked=None):
+        # headerPacked is the 2048 bytes as read from a binary file,
+        # headerUnpacked is a tuple containing the decoded values
 
         self.Image = Image()
         self.Meas = Meas()
@@ -98,8 +93,8 @@ class Header(object):
         self.Platform = Platform()
         self.User = User()
 
-        if headerUnpacked == None:
-            if headerPacked == None:
+        if headerUnpacked is None:
+            if headerPacked is None:
                 headerPacked = (np.zeros(1024, "uint16")).tostring()
 
             rc, headerUnpacked = self.unpackHeader(headerPacked)

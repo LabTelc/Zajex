@@ -10,3 +10,7 @@ class CustomItemComboBox(QComboBox):
 
     def addCustomItem(self, item):
         self.model.appendRow(item)
+
+    def getCustomItem(self, index):
+        idx = self.model.index(index, 0)
+        return self.model.itemFromIndex(idx)

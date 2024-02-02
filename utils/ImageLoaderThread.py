@@ -3,7 +3,7 @@ from PyQt5.QtCore import pyqtSignal, QThread, QMutex, QWaitCondition
 import numpy as np
 from PIL import Image as Image
 import tifffile
-import EZRT
+from . import EZRT
 
 
 class ImageLoaderThread(QThread):
@@ -24,11 +24,11 @@ class ImageLoaderThread(QThread):
                 arr = None
                 try:
                     if fex == "bin":
-                        arr = np.fromfile(filepath, dtype=self.params.dtype_in)
-                        arr = arr.reshape(self.params.shape)
+                        arr = np.memmap(filepath, mode='r', dtype=params.dtype, shape=(params.width, params.height))
+                        arr = np.array(arr)
                     elif fex == 'txt':
                         with open(filepath, 'r') as f:
-                            arr = np.array([[x for x in line.split()] for line in f], self.params.dtype)
+                            arr = np.array([[x for x in line.split()] for line in f], params.dtype)
                     elif fex == 'raw':
                         _, arr = EZRT.loadImage(filepath)
                     elif fex in ['jpg', 'jpeg', 'png']:
@@ -36,7 +36,7 @@ class ImageLoaderThread(QThread):
                         arr = np.array(arr.convert('L'))
                     elif fex in ['tiff', 'tif']:
                         arr = tifffile.imread(filepath)
-                        if arr.shape > 2:
+                        if len(arr.shape) > 2:
                             if arr.shape[2] > 3:
                                 arr = arr[:, :, :3]
                             arr = np.dot(arr, [0.299, 0.587, 0.114])
@@ -44,7 +44,7 @@ class ImageLoaderThread(QThread):
                     arr = None
                     filepath = e
                 self.image_loaded.emit((arr, filepath, slot))
-                self.wait_for_signal()
+            self.wait_for_signal()
 
     def wait_for_signal(self):
         self.mutex.lock()

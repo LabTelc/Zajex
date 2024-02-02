@@ -2,7 +2,7 @@ import sys
 
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTextEdit, QLineEdit
-from code import InteractiveInterpreter
+from code import InteractiveConsole
 
 
 class ConsoleWidget(QWidget):
@@ -21,7 +21,8 @@ class ConsoleWidget(QWidget):
         self.layout.addWidget(self.console_input)
 
         self.capture_output = CaptureOutput(self.text_edit)
-        self.interpreter = InteractiveInterpreter()
+        self.interpreter = InteractiveConsole()
+        self.interpreter.runsource("import numpy as np")
 
     def run_code(self):
         code = self.console_input.text()
@@ -34,13 +35,16 @@ class ConsoleWidget(QWidget):
         sys.stdout = sys.stderr = self.capture_output
 
         try:
-            self.interpreter.runcode(code)
+            self.interpreter.runsource(code)
         except Exception as e:
             self.text_edit.append(f"Error: {str(e)}\n")
 
         # Restore the original stdout
         sys.stdout = original_stdout
         sys.stderr = original_stderr
+
+    def get_locals(self):
+        return self.interpreter.locals
 
 
 class CaptureOutput:

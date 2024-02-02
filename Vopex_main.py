@@ -5,12 +5,12 @@ Created on 29.01.2024
 @author: Zajicek
 @author: Vopalensky
 """
-import os
 import sys
 from argparse import ArgumentParser
-from dataclasses import dataclass
 from queue import Queue
 
+import numpy as np
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
@@ -22,6 +22,7 @@ from utils.utils import validate_input
 from utils.ImageLoaderThread import ImageLoaderThread
 
 Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/MainWindow.ui')
+icon_path = './ui_elements/icon_64x.png'
 
 
 @dataclass
@@ -30,8 +31,8 @@ class Parameters:
     header: int = 0
     width: int = 0
     height: int = 0
-    lower: float = 0
-    upper: float = 0
+    vmin: float = 0
+    vmax: float = 0
     x_lim: tuple = (0, width)
     y_lim: tuple = (height, 0)
     rotate: int = 0
@@ -40,6 +41,8 @@ class Parameters:
     cmap: str = 'gray'
     from_zoom: bool = False
     last_dir: str = "./"
+    colorbar: bool = False
+    show_axis: bool = False
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -47,13 +50,19 @@ class Main(QMainWindow, Ui_MainWindow):
         super(Main, self).__init__()
         self.setupUi(self)
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
+        self.setWindowIcon(QIcon(icon_path))
         self.parameters = Parameters()
+
         if args.shape is not None:
             self.parameters.width, self.parameters.height = args.shape
         self.palette = 'dark'
+        app.setPalette(self.palettes['dark'], None)
 
-        app.setPalette(self.palettes['dark'], )
-
+        self.image_queue = Queue()
+        self.loader = ImageLoaderThread(self, image_queue=self.image_queue)
+        self.loader.start()
+        self.curr_id = None
+        self.images = {}
         input_handling_functions = self._input_handling_functions()
         for signal in input_handling_functions.keys():
             signal.connect(input_handling_functions[signal])
@@ -64,7 +73,6 @@ class Main(QMainWindow, Ui_MainWindow):
             "c": self.cb_images_c,
             "d": self.cb_images_d,
         }
-        self.images = {}
         self.sliders = {
             "a": self.slider_a,
             "b": self.slider_b,
@@ -82,9 +90,9 @@ class Main(QMainWindow, Ui_MainWindow):
             "columns_to": self.sb_columns_to,
         }
         self._init_gui_values()
-        self.loader = ImageLoaderThread(self)
-        self.image_queue = Queue()
         self.id_gen = self.id_generator()
+        self.console_widget.get_locals()['images'] = self.images
+        self.hist_ax = self.canvas_histogram.get_axis()
 
     def _init_gui_values(self):
         for cmap in cmaps_list:
@@ -144,34 +152,58 @@ class Main(QMainWindow, Ui_MainWindow):
             self.le_operation.returnPressed: self._le_operation_handler,
             self.pb_save_all_calculated.clicked: self._pb_save_all_handler,
             self.slider_d.valueChanged: self._slider_handler,
+
+            # Other
+            self.loader.image_loaded: self._image_loader_handler,
+            self.canvas_main.selection_changed: self._init_image_info_values
         }
 
     def _cb_colormaps_handler(self, event):
         print(event)
         self.parameters.cmap = self.cb_colormaps.currentText()
-        self._update()
+        self.canvas_main.redraw()
 
     def _slider_limits_handler(self, event):
         slider = self.sender().objectName().split('_')[-1]
         self.spin_boxes[slider].blockSignals(True)
         self.spin_boxes[slider].setValue(event)
+        if slider == "upper":
+            self.parameters.vmax = event
+        elif slider == "lower":
+            self.parameters.vmin = event
         self.spin_boxes[slider].blockSignals(False)
-        self._update()
+        self.canvas_main.redraw()
 
     def _dsb_limits_handler(self, event):
         spin_box = self.sender().objectName().split('_')[-1]
         self.sliders[spin_box].blockSignals(True)
         self.sliders[spin_box].setValue(int(event))
         self.sliders[spin_box].blockSignals(False)
-        self._update()
+        self.canvas_main.redraw()
 
-    def _cb_auto_range_handler(self, event):
-        print(event)
-        self._update()
+    def _cb_auto_range_handler(self):
+        if self.curr_id is None:
+            return
+        else:
+            arr, _ = self.images[self.curr_id]
+            idx = self.cb_auto_range.currentIndex()
+            if idx == 0:
+                self.parameters.vmin = arr.min()
+                self.parameters.vmax = arr.max()
+            elif idx == 1:
+                self.parameters.vmin = np.percentile(arr, 1)
+                self.parameters.vmax = np.percentile(arr, 99)
+            elif idx == 2:
+                self.parameters.vmin = np.percentile(arr, 5)
+                self.parameters.vmax = np.percentile(arr, 95)
+            elif idx == 3:
+                self.parameters.vmin = arr.min() + 1
+                self.parameters.vmax = arr.max() - 1
+            self._init_image_info_values()
 
     def _cb_from_zoom_handler(self):
         self.parameters.from_zoom = self.cb_from_zoom.isChecked()
-        self._update()
+        self._init_image_info_values()
 
     def _pb_apply_all_range_handler(self, event):
         print(event)
@@ -180,18 +212,21 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.sb_rows_to.value() > self.parameters.height:
             self.sb_rows_to.setValue(self.parameters.height)
         self.parameters.y_lim = (self.sb_rows_from.value(), self.sb_rows_to.value())
-        self._update()
+        self._init_image_info_values()
 
     def _sb_columns_handler(self):
         if self.sb_columns_to.value() > self.parameters.height:
             self.sb_columns_to.setValue(self.parameters.height)
         self.parameters.x_lim = (self.sb_columns_from.value(), self.sb_columns_to.value())
-        self._update()
+        self._init_image_info_values()
 
     def _un_zoom(self):
-        self.parameters.x_lim = (0, self.parameters.width)
-        self.parameters.y_lim = (self.height, 0)
-        self._update()
+        if self.curr_id is None:
+            return
+        arr, _ = self.images[self.curr_id]
+        self.parameters.x_lim = 0, arr.shape[1]
+        self.parameters.y_lim = arr.shape[0], 0
+        self._init_image_info_values()
 
     def _sb_apply_all_zoom_handler(self, event):
         print(event)
@@ -203,11 +238,12 @@ class Main(QMainWindow, Ui_MainWindow):
         group = self.sender().objectName().split('_')[-1]
         self.sliders[group].blockSignals(True)
         self.sliders[group].setValue(event)
+        im_id = self.combo_boxes[group].getCustomItem(event).im_id
+        self._show_image(im_id)
         self.sliders[group].blockSignals(False)
 
     def _pb_load_handler(self):
         group = self.sender().objectName().split("_")[-1]
-        combo_box = self.combo_boxes[group]
 
         filenames, filter_ = QFileDialog.getOpenFileNames(self, "Load images...",
                                                           self.parameters.last_dir, lFileTypeString,
@@ -233,8 +269,9 @@ class Main(QMainWindow, Ui_MainWindow):
             if valid is None:
                 self.log(f"File {filepath} could not be loaded.", LogTypes.Error)
             else:
-                self.image_queue.put(filepath)
+                self.image_queue.put((filepath, self.parameters, group))
 
+        self.statusbar.start_progress(self.image_queue.qsize())
         self.loader.wake()
 
     def _cb_save_handler(self, event):
@@ -244,6 +281,8 @@ class Main(QMainWindow, Ui_MainWindow):
         group = self.sender().objectName().split("_")[-1]
         self.combo_boxes[group].blockSignals(True)
         self.combo_boxes[group].setCurrentIndex(event)
+        im_id = self.combo_boxes[group].getCustomItem(event).im_id
+        self._show_image(im_id)
         self.combo_boxes[group].blockSignals(False)
 
     def _le_operation_handler(self, event):
@@ -252,18 +291,58 @@ class Main(QMainWindow, Ui_MainWindow):
     def _image_loader_handler(self, event):
         arr, filepath, slot = event
         if arr is not None:
+            self.sliders[slot].blockSignals(True)
+            self.combo_boxes[slot].blockSignals(True)
             im_id = next(self.id_gen)
-            self.images[im_id] = arr
-            item = CustomStandardItem(im_id)
-            item.setName(filepath.split("/")[-1])
+            self.images[im_id] = (arr, filepath)
+            item = CustomStandardItem(im_id=im_id)
+            item.setText(filepath.split("/")[-1])
             item.setToolTip(filepath)
-            self.combo_boxes[slot].add_custom_item(item)
-            self.log(f"File {filepath} loaded.", LogTypes.Log)
+            self.combo_boxes[slot].addCustomItem(item)
+            self.log(f"File {filepath} loaded with ID: {im_id}.", LogTypes.Log)
+            self.sliders[slot].setMaximum(self.combo_boxes[slot].count() - 1)
+            self.statusbar.add_progress()
+            self.sliders[slot].blockSignals(False)
+            self.combo_boxes[slot].blockSignals(False)
         else:
             self.log(filepath, LogTypes.Error)
 
-    def _update(self):
-        print("Update")
+    def _init_image_info_values(self):
+        if self.curr_id is None:
+            return
+        for sb in self.spin_boxes.values():
+            sb.blockSignals(True)
+
+        arr, filename = self.images[self.curr_id]
+        self.spin_boxes['lower'].setRange(self.parameters.vmin, self.parameters.vmax)
+        self.spin_boxes['upper'].setRange(self.parameters.vmin, self.parameters.vmax)
+        self.sliders['lower'].setMaximum(100)
+        self.sliders['upper'].setMaximum(100)
+        self.spin_boxes['rows_from'].setValue(self.parameters.x_lim[0])
+        self.spin_boxes['rows_to'].setValue(self.parameters.x_lim[1])
+        self.spin_boxes['columns_from'].setValue(self.parameters.y_lim[1])
+        self.spin_boxes['columns_to'].setValue(self.parameters.y_lim[0])
+        self.l_im_mean.setText(str(arr.mean()))
+        self.l_im_sigma.setText(str(arr.std()))
+        self.l_range_mean.setText(str(arr[self.parameters.x_lim[0]:self.parameters.x_lim[1],
+                                      self.parameters.y_lim[1]:self.parameters.y_lim[0]].mean()))
+        self.l_range_sigma.setText(str(arr[self.parameters.x_lim[0]:self.parameters.x_lim[1],
+                                       self.parameters.y_lim[1]:self.parameters.y_lim[0]].std()))
+
+        for sb in self.spin_boxes.values():
+            sb.blockSignals(False)
+
+    def _show_image(self, im_id):
+        self.curr_id = im_id
+        arr, filepath = self.images[im_id]
+        self.parameters.vmin = arr.min()
+        self.parameters.vmax = arr.max()
+        self.parameters.x_lim = (0, arr.shape[0])
+        self.parameters.y_lim = (arr.shape[1], 0)
+        self.canvas_main.show_image(arr, filepath.split("/")[-1], im_id)
+        self.hist_ax.hist(self.images[im_id][0].flatten())
+        self.canvas_histogram.redraw()
+        self._init_image_info_values()
 
     def log(self, text, log_type=LogTypes.Log):
         if log_type == LogTypes.Log:
@@ -280,6 +359,12 @@ class Main(QMainWindow, Ui_MainWindow):
         while True:
             yield current_id
             current_id += 1
+
+    def closeEvent(self, event):
+        self.loader.requestInterruption()
+        self.loader.wake()
+        event.accept()
+        app.exit(0)
 
 
 if __name__ == '__main__':
