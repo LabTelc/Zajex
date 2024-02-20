@@ -1,8 +1,10 @@
 import sys
 
 from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTextEdit, QLineEdit
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTextEdit
 from code import InteractiveConsole
+
+from  . import HistoryLineEdit
 
 
 class ConsoleWidget(QWidget):
@@ -13,9 +15,9 @@ class ConsoleWidget(QWidget):
 
         self.text_edit = QTextEdit(self)
         self.text_edit.setReadOnly(True)
-        self.console_input = QLineEdit(self)
+        self.console_input = HistoryLineEdit.HistoryLineEdit(self)
 
-        self.console_input.returnPressed.connect(self.run_code)
+        self.console_input.return_pressed.connect(self.run_code)
 
         self.layout.addWidget(self.text_edit)
         self.layout.addWidget(self.console_input)
