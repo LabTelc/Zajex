@@ -13,7 +13,7 @@ class ClickHoldComboBox(QComboBox):
 
     def mousePressEvent(self, event, QMouseEvent=None):
         if event.button() == Qt.LeftButton:
-            self.timer.start(500)
+            self.timer.start(250)
             super().mousePressEvent(event)
             self.hidePopup()
         else:
