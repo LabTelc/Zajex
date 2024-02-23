@@ -51,7 +51,7 @@ class DragNDropComboBox(QComboBox):
             return
         idx = self.model.index(current_index, 0)
         item = self.model.itemFromIndex(idx)
-        im_id = item.data(Qt.UserRole)
+        im_id = item.data(Qt.UserRole, )
         drag = QDrag(self)
         mime_data = QMimeData()
         mime_data.setText(str(im_id))
@@ -72,23 +72,12 @@ class DragNDropComboBox(QComboBox):
             event.source().remove_item(im_id)
             event.source().item_changed.emit()
 
-            # If dropping within the same combo box, move the item
-            if event.source() == self:
-                source_index = self.currentIndex()
-                source_item = self.model.itemFromIndex(source_index)
-                source_im_id = source_item.im_id
-                if source_im_id == im_id:
-                    return
-                source_item.setText(str(im_id))
-
-            # If dropping from another combo box, add a new item
-            else:
-                item = QStandardItem()
-                _, filepath = self.window().images[im_id]
-                item.setToolTip(filepath)
-                item.setText(filepath.split("/")[-1])
-                item.setData(im_id, Qt.UserRole)
-                self.model.appendRow(item)
+            item = QStandardItem()
+            img = self.window().images[im_id]
+            item.setToolTip(img.filepath)
+            item.setText(img.filepath.split("/")[-1])
+            item.setData(im_id, Qt.UserRole)
+            self.model.appendRow(item)
 
             event.acceptProposedAction()
             self.item_changed.emit()
@@ -96,6 +85,6 @@ class DragNDropComboBox(QComboBox):
     def remove_item(self, im_id):
         for row in range(self.model.rowCount()):
             item = self.model.item(row, 0)
-            if item.data(Qt.UserRole) == im_id:
+            if item.data(Qt.UserRole, ) == im_id:
                 self.model.removeRow(row)
                 break

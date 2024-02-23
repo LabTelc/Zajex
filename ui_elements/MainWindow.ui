@@ -778,13 +778,16 @@
                <property name="title">
                 <string>Rotation and Mirror</string>
                </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
                <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_16">
                   <item>
                    <widget class="QLabel" name="label_7">
                     <property name="text">
-                     <string>Rotatio:</string>
+                     <string>Rotation:</string>
                     </property>
                    </widget>
                   </item>
@@ -796,32 +799,39 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_18">
                   <item>
-                   <widget class="QPushButton" name="pushButton">
+                   <widget class="QPushButton" name="pb_rotate_ccw">
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>Rotate CCW</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="pushButton_2">
+                   <widget class="QPushButton" name="pb_rotate_cw">
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>Rotate CW</string>
                     </property>
                    </widget>
                   </item>
                  </layout>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBox">
+                 <widget class="QCheckBox" name="cb_mirror_ud">
                   <property name="text">
                    <string>Mirror Up/Down</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBox_2">
+                 <widget class="QCheckBox" name="cb_mirror_lr">
                   <property name="text">
                    <string>Mirror Left/Right</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pb_apply_all_rot">
+                  <property name="text">
+                   <string>Apply on all</string>
                   </property>
                  </widget>
                 </item>
@@ -868,19 +878,9 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="a_Load_Image"/>
     <addaction name="a_Load_Images"/>
     <addaction name="a_Save_Image"/>
     <addaction name="a_Settings"/>
-   </widget>
-   <widget class="QMenu" name="menuImage">
-    <property name="title">
-     <string>Image</string>
-    </property>
-    <addaction name="a_Rotate_CW"/>
-    <addaction name="a_Rotate_CCW"/>
-    <addaction name="a_Mirror_LR"/>
-    <addaction name="a_Mirror_UD"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -889,11 +889,10 @@
     <addaction name="a_Batch_processing"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuImage"/>
    <addaction name="menuTools"/>
   </widget>
   <widget class="CustomStatusBar" name="statusbar"/>
-  <widget class="QDockWidget" name="dockWidget_5">
+  <widget class="QDockWidget" name="dockWidget">
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
@@ -920,7 +919,7 @@
         <enum>QTabWidget::South</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <property name="elideMode">
         <enum>Qt::ElideNone</enum>
@@ -939,10 +938,172 @@
          <string>Logs</string>
         </attribute>
        </widget>
-       <widget class="QTableView" name="tv_open_files">
+       <widget class="QWidget" name="tv_open_files">
         <attribute name="title">
          <string>Opened files</string>
         </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_13">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="CollapsibleGroupBox" name="gb_a">
+           <property name="title">
+            <string>A</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_19">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="lw_a"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="CollapsibleGroupBox" name="gb_b">
+           <property name="title">
+            <string>B</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_20">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="lw_b"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="CollapsibleGroupBox" name="gb_c">
+           <property name="title">
+            <string>C</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_21">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="lw_c"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="CollapsibleGroupBox" name="gb_d">
+           <property name="title">
+            <string>Operation</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_22">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="lw_d"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </widget>
        <widget class="ConsoleWidget" name="console_widget">
         <attribute name="title">

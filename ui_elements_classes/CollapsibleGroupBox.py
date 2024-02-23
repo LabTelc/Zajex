@@ -38,7 +38,7 @@ class CollapsibleGroupBox(QGroupBox):
         self.toggle_animation.start()
 
     def set_content_layout(self):
-        collapsed_height = 20
+        collapsed_height = 25
         content_height = self.sizeHint().height()
         for i in range(self.toggle_animation.animationCount()):
             animation = self.toggle_animation.animationAt(i)

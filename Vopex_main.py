@@ -9,11 +9,13 @@ import sys
 from argparse import ArgumentParser
 from queue import Queue
 
+import numpy as np
 from PyQt5.QtGui import QIcon, QStandardItem
-from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog, QListWidgetItem
 from PyQt5.uic import loadUiType
 
 from ui_elements_classes.FileInfoDialog import FileInfoDialog
+from ui_elements_classes.InternalModel import InternalModel
 from ui_elements_classes.Palletes import *
 from utils.ImageLoaderThread import ImageLoaderThread
 from utils.global_vars import *
@@ -21,6 +23,8 @@ from utils.utils import *
 
 Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/MainWindow.ui')
 icon_path = './ui_elements/icon_64x.png'
+icon_rotate_cw_path = './ui_elements/arrow_rotate_cw.png'
+icon_rotate_ccw_path = './ui_elements/arrow_rotate_ccw.png'
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -30,8 +34,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
         self.setWindowIcon(QIcon(icon_path))
         self.parameters = Parameters()
-        for gb in [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram]:
-            gb.set_content_layout()
 
         if args.shape is not None:
             self.parameters.width, self.parameters.height = args.shape
@@ -53,6 +55,12 @@ class Main(QMainWindow, Ui_MainWindow):
             "c": self.cb_images_c,
             "d": self.cb_images_d,
         }
+        self.list_widgets = {
+            "a": self.lw_a,
+            "b": self.lw_b,
+            "c": self.lw_c,
+            "d": self.lw_d,
+        }
         self.sliders = {
             "a": self.slider_a,
             "b": self.slider_b,
@@ -69,8 +77,16 @@ class Main(QMainWindow, Ui_MainWindow):
             "columns_from": self.sb_columns_from,
             "columns_to": self.sb_columns_to,
         }
+        self.models = {
+            "a": InternalModel(),
+            "b": InternalModel(),
+            "c": InternalModel(),
+            "d": InternalModel()
+        }
+        self.collapsible_widgets = [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram,
+                                    self.gb_rot_mir, self.gb_a, self.gb_b, self.gb_c, self.gb_d,]
         self._init_gui_values()
-        self.id_gen = self.id_generator()
+        self.id_gen = id_generator()
         self.console_widget.get_locals()['images'] = self.images
         self.console_widget.get_locals()['app'] = self
 
@@ -87,6 +103,12 @@ class Main(QMainWindow, Ui_MainWindow):
 
         for r in limits_dict.values():
             self.cb_auto_range.addItem(r)
+
+        for i in rotation_list:
+            self.cb_rotation.addItem(i)
+
+        self.pb_rotate_cw.setIcon(QIcon(icon_rotate_cw_path))
+        self.pb_rotate_ccw.setIcon(QIcon(icon_rotate_ccw_path))
 
         for s in self.sliders:
             if s not in ['upper', "lower"]:
@@ -111,8 +133,15 @@ class Main(QMainWindow, Ui_MainWindow):
             self.sb_columns_to.valueChanged: self._sb_columns_handler,
             self.pb_unzoom.clicked: self._un_zoom,
             self.pb_apply_all_zoom.clicked: self._pb_apply_all_handler,
-            # -
+            # - Histogram
             self.slider_bins.valueChanged: self._slider_bins_handler,
+            # - Rotation and Mirror
+            self.cb_rotation.currentIndexChanged: self._rotation_handler,
+            self.pb_rotate_ccw.clicked: self._rotation_handler,
+            self.pb_rotate_cw.clicked: self._rotation_handler,
+            self.cb_mirror_ud.stateChanged: self._mirror_handler,
+            self.cb_mirror_lr.stateChanged: self._mirror_handler,
+            # - Save Current
             self.cb_save_current.save_signal: self._cb_save_handler,
 
             # Assets
@@ -148,13 +177,8 @@ class Main(QMainWindow, Ui_MainWindow):
         }
 
     def _i_want_action(self):
-        self.a_Load_Image.triggered.connect()
         self.a_Load_Images.triggered.connect()
         self.a_Save_Image.triggered.connect()
-        self.a_Rotate_CW.triggered.connect()
-        self.a_Rotate_CCW.triggered.connect()
-        self.a_Mirror_LR.triggered.connect()
-        self.Mirror_UD.triggered.connect()
         self.a_Batch_Processing.triggered.connect()
         self.a_Settings.triggered.connect()
 
@@ -280,11 +304,44 @@ class Main(QMainWindow, Ui_MainWindow):
         self.parameters.num_bins = event
         self.plot_histogram()
 
+    def _rotation_handler(self):
+        if self.curr_image is None:
+            return
+        sender = self.sender().objectName()
+        if "pb" in sender:
+            pb = sender.split("_")[-1]
+            if pb == "cw":
+                self.cb_rotation.setCurrentIndex((self.cb_rotation.currentIndex() + 1) % 4)
+            elif pb == "ccw":
+                self.cb_rotation.setCurrentIndex((self.cb_rotation.currentIndex() - 1) % 4)
+        else:
+            old_rotation = self.curr_image.rotation
+            index = self.cb_rotation.currentIndex()
+            self.curr_image.array = np.rot90(self.curr_image.array, (index - old_rotation) % 4)
+            self.curr_image.rotation = index
+            self.canvas_main.redraw()
+
+    def _mirror_handler(self, event):
+        sender = self.sender().objectName().split("_")[-1]
+        if sender == "ud":
+            self.curr_image.array = np.flipud(self.curr_image.array)
+            if event == 0:
+                self.curr_image.mirror_UD = False
+            elif event == 2:
+                self.curr_image.mirror_UD = True
+        elif sender == "lr":
+            self.curr_image.array = np.fliplr(self.curr_image.array)
+            if event == 0:
+                self.curr_image.mirror_LR = False
+            elif event == 2:
+                self.curr_image.mirror_LR = True
+        self.canvas_main.redraw()
+
     def _cb_images_handler(self, event):
         group = self.sender().objectName().split('_')[-1]
         self.sliders[group].blockSignals(True)
         self.sliders[group].setValue(event)
-        im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole)
+        im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole, )
         self._show_image(im_id)
         self.sliders[group].blockSignals(False)
 
@@ -344,7 +401,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 im_ids = []
                 combo = self.combo_boxes[combo]
                 for i in range(combo.count()):
-                    im_id = combo.get_custom_item(i).data(Qt.UserRole)
+                    im_id = combo.get_custom_item(i).data(Qt.UserRole, )
                     im_ids.append(im_id)
                 self._save_images(im_ids, ftype, file_path)
 
@@ -365,7 +422,7 @@ class Main(QMainWindow, Ui_MainWindow):
         group = self.sender().objectName().split("_")[-1]
         self.combo_boxes[group].blockSignals(True)
         self.combo_boxes[group].setCurrentIndex(event)
-        im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole)
+        im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole, )
         self._show_image(im_id)
         self.combo_boxes[group].blockSignals(False)
 
@@ -376,11 +433,17 @@ class Main(QMainWindow, Ui_MainWindow):
         fp_a, fp_b, fp_c = "", "", ""
 
         if self.combo_boxes['a'].count() > 0:
-            a, fp_a = self.images[self.combo_boxes['a'].get_current_item().data(Qt.UserRole)]
+            im_a = self.images[self.combo_boxes['a'].get_current_item().data(Qt.UserRole, )]
+            a = im_a.array
+            fp_a = im_a.filepath
         if self.combo_boxes['b'].count() > 0:
-            b, fp_b = self.images[self.combo_boxes['b'].get_current_item().data(Qt.UserRole)]
+            im_b = self.images[self.combo_boxes['b'].get_current_item().data(Qt.UserRole, )]
+            b = im_b.array
+            fp_b = im_b.filepath
         if self.combo_boxes['c'].count() > 0:
-            c, fp_c = self.images[self.combo_boxes['c'].get_current_item().data(Qt.UserRole)]
+            im_c = self.images[self.combo_boxes['c'].get_current_item().data(Qt.UserRole, )]
+            c = im_c.array
+            fp_c = im_c.filepath
 
         try:
             image = eval(str(text))
@@ -414,18 +477,26 @@ class Main(QMainWindow, Ui_MainWindow):
             im_id = next(self.id_gen)
             img = ImageObject(arr, arr.min(), arr.max(), (0, arr.shape[1]), (arr.shape[0], 0), im_id, filepath)
             self.images[im_id] = img
+
             item = QStandardItem()
             item.setText(filepath.split("/")[-1])
             item.setToolTip(filepath)
             item.setData(im_id, Qt.UserRole)
             self.combo_boxes[slot].add_item(item)
+
+            item = QListWidgetItem()
+            item.setText(filepath.split("/")[-1])
+            item.setToolTip(filepath)
+            item.setData(im_id, Qt.UserRole)
+            self.list_widgets[slot].addItem(item)
+
             self.log(f"File \"{filepath}\" loaded with ID: {im_id} in slot: {slot.upper()}.", LogTypes.Log)
             self.sliders[slot].setMaximum(self.combo_boxes[slot].count() - 1)
-            self.statusbar.add_progress()
             self.sliders[slot].blockSignals(False)
             self.combo_boxes[slot].blockSignals(False)
         else:
-            self.log(filepath, LogTypes.Error)
+            self.log(f"File \"{filepath}\" could not be loaded.", LogTypes.Error)
+        self.statusbar.add_progress()
 
     def _item_changed(self):
         slot = self.sender().objectName().split("_")[-1]
@@ -509,18 +580,11 @@ class Main(QMainWindow, Ui_MainWindow):
         return self.curr_image.array[self.curr_image.y_lim[1]:self.curr_image.y_lim[0],
                                      self.curr_image.x_lim[0]:self.curr_image.x_lim[1]]
 
-    @staticmethod
-    def id_generator():
-        current_id = 0
-        while True:
-            yield current_id
-            current_id += 1
-
     def resizeEvent(self, event):
-        self.gb_fig_settings.setMaximumWidth(int(event.size().width()/6))
-        for el in [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram, self.gb_rot_mir]:
+        self.gb_fig_settings.setFixedWidth(int(event.size().width() / 6))
+        self.dockWidget.setFixedWidth(int(event.size().width() / 6))
+        for el in self.collapsible_widgets:
             el.set_content_layout()
-            el.setMaximumWidth(self.sa_content.layout().sizeHint().width())
         super().resizeEvent(event)
 
     def closeEvent(self, event):

@@ -31,6 +31,7 @@ lFileTypeString = """
             TIFF file (*.tiff);;
             All files (*.*)
             """
+rotation_list = ["0°", "90°", "180°", "270°"]
 
 
 @dataclass
@@ -68,4 +69,6 @@ class ImageObject:
     y_lim: tuple
     id_: int
     filepath: str
-
+    mirror_UD: bool = False
+    mirror_LR: bool = False
+    rotation: int = 0
