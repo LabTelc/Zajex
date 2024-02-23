@@ -28,6 +28,7 @@ class MPLHistogramCanvas(QWidget):
         self.ax.clear()
         data = image.array.flatten()
         counts, bins, patches = self.ax.hist(data, bins=parameters.num_bins, edgecolor='none', linewidth=1.2)
+
         self.ax.axvline(image.vmin, color='r')
         self.ax.axvline(image.vmax, color='r')
 

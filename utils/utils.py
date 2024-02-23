@@ -4,6 +4,13 @@ import numpy as np
 import tifffile
 
 
+def id_generator():
+    current_id = 0
+    while True:
+        yield current_id
+        current_id += 1
+
+
 def validate_input(filepath, parameters):
     if not os.path.exists(filepath) or not os.path.isfile(filepath):
         return None

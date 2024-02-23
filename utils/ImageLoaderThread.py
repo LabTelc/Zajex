@@ -36,7 +36,9 @@ class ImageLoaderThread(QThread):
                         arr = np.array(arr.convert('L'))
                     elif fex in ['tiff', 'tif']:
                         arr = tifffile.imread(filepath)
-                        if len(arr.shape) > 2:
+                        if len(arr.shape) == 1:
+                            arr = None
+                        elif len(arr.shape) > 2:
                             if arr.shape[2] > 3:
                                 arr = arr[:, :, :3]
                             arr = np.dot(arr, [0.299, 0.587, 0.114])
