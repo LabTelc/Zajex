@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1269</width>
-    <height>833</height>
+    <width>1265</width>
+    <height>822</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -304,7 +304,7 @@
               <x>0</x>
               <y>0</y>
               <width>318</width>
-              <height>742</height>
+              <height>731</height>
              </rect>
             </property>
             <property name="maximumSize">
@@ -512,13 +512,6 @@
                    <widget class="QLabel" name="label_6">
                     <property name="text">
                      <string>Current selection:</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLabel" name="l_curr_selection">
-                    <property name="text">
-                     <string>N/A</string>
                     </property>
                    </widget>
                   </item>
@@ -865,32 +858,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1269</width>
-     <height>18</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="a_Load_Images"/>
-    <addaction name="a_Save_Image"/>
-    <addaction name="a_Settings"/>
-   </widget>
-   <widget class="QMenu" name="menuTools">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-    <addaction name="a_Batch_processing"/>
-   </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuTools"/>
-  </widget>
   <widget class="CustomStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="dockWidget">
    <attribute name="dockWidgetArea">
@@ -986,7 +953,11 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QListWidget" name="lw_a"/>
+             <widget class="DragNDropListView" name="lw_a">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1019,7 +990,11 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QListWidget" name="lw_b"/>
+             <widget class="DragNDropListView" name="lw_b">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1052,7 +1027,11 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QListWidget" name="lw_c"/>
+             <widget class="DragNDropListView" name="lw_c">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1085,7 +1064,11 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QListWidget" name="lw_d"/>
+             <widget class="DragNDropListView" name="lw_d">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1115,11 +1098,40 @@
     </layout>
    </widget>
   </widget>
-  <action name="a_Load_Image">
-   <property name="text">
-    <string>Load Image</string>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1265</width>
+     <height>18</height>
+    </rect>
    </property>
-  </action>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="a_Load_Images"/>
+    <addaction name="a_Save_Image"/>
+    <addaction name="a_Settings"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="a_Batch_processing"/>
+   </widget>
+   <widget class="QMenu" name="menuSet_input_parameters">
+    <property name="title">
+     <string>Parameters</string>
+    </property>
+    <addaction name="aSetInputParams"/>
+    <addaction name="aSwitchTheme"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuSet_input_parameters"/>
+  </widget>
   <action name="a_Load_Images">
    <property name="text">
     <string>Load Images</string>
@@ -1130,26 +1142,6 @@
     <string>Save Image</string>
    </property>
   </action>
-  <action name="a_Rotate_CW">
-   <property name="text">
-    <string>Rotate CW</string>
-   </property>
-  </action>
-  <action name="a_Rotate_CCW">
-   <property name="text">
-    <string>Rotate CCW</string>
-   </property>
-  </action>
-  <action name="a_Mirror_LR">
-   <property name="text">
-    <string>Mirror LR</string>
-   </property>
-  </action>
-  <action name="a_Mirror_UD">
-   <property name="text">
-    <string>Mirror UD</string>
-   </property>
-  </action>
   <action name="a_Batch_processing">
    <property name="text">
     <string>Batch processing</string>
@@ -1158,6 +1150,16 @@
   <action name="a_Settings">
    <property name="text">
     <string>Settings</string>
+   </property>
+  </action>
+  <action name="aSetInputParams">
+   <property name="text">
+    <string>Set input Parameters</string>
+   </property>
+  </action>
+  <action name="aSwitchTheme">
+   <property name="text">
+    <string>Switch Theme</string>
    </property>
   </action>
  </widget>
@@ -1200,6 +1202,11 @@
    <extends>QGroupBox</extends>
    <header location="global">./ui_elements_classes/CollapsibleGroupBox</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DragNDropListView</class>
+   <extends>QListView</extends>
+   <header location="global">./ui_elements_classes/DragNDropListView</header>
   </customwidget>
  </customwidgets>
  <resources/>

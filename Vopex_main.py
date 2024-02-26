@@ -10,12 +10,11 @@ from argparse import ArgumentParser
 from queue import Queue
 
 import numpy as np
-from PyQt5.QtGui import QIcon, QStandardItem
-from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog, QListWidgetItem
+from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
 from ui_elements_classes.FileInfoDialog import FileInfoDialog
-from ui_elements_classes.InternalModel import InternalModel
 from ui_elements_classes.Palletes import *
 from utils.ImageLoaderThread import ImageLoaderThread
 from utils.global_vars import *
@@ -34,6 +33,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
         self.setWindowIcon(QIcon(icon_path))
         self.parameters = Parameters()
+        self.action_connection()
 
         if args.shape is not None:
             self.parameters.width, self.parameters.height = args.shape
@@ -78,11 +78,15 @@ class Main(QMainWindow, Ui_MainWindow):
             "columns_to": self.sb_columns_to,
         }
         self.models = {
-            "a": InternalModel(),
-            "b": InternalModel(),
-            "c": InternalModel(),
-            "d": InternalModel()
+            "a": QStandardItemModel(),
+            "b": QStandardItemModel(),
+            "c": QStandardItemModel(),
+            "d": QStandardItemModel()
         }
+        for model in self.models.keys():
+            self.combo_boxes[model].set_custom_model(self.models[model])
+            self.list_widgets[model].set_custom_model(self.models[model])
+
         self.collapsible_widgets = [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram,
                                     self.gb_rot_mir, self.gb_a, self.gb_b, self.gb_c, self.gb_d,]
         self._init_gui_values()
@@ -176,11 +180,28 @@ class Main(QMainWindow, Ui_MainWindow):
             self.canvas_main.pixel_selected: self.plot_histogram,
         }
 
-    def _i_want_action(self):
-        self.a_Load_Images.triggered.connect()
-        self.a_Save_Image.triggered.connect()
-        self.a_Batch_Processing.triggered.connect()
-        self.a_Settings.triggered.connect()
+    def action_connection(self):
+        self.aSetInputParams.triggered.connect(self._set_input_parameters)
+        self.aSwitchTheme.triggered.connect(self.switch_theme)
+        # self.a_Load_Images.triggered.connect()
+        # self.a_Save_Image.triggered.connect()
+        # self.a_Batch_Processing.triggered.connect()
+        # self.a_Settings.triggered.connect()
+
+    def _set_input_parameters(self):
+        dialog = FileInfoDialog(self, self.parameters, ftype="bin")
+        if dialog.exec_() == QDialog.Accepted:
+            self.parameters.width = dialog.result["width"]
+            self.parameters.height = dialog.result["height"]
+            self.parameters.dtype = dialog.result["dtype"]
+
+    def switch_theme(self):
+        if self.palette == 'dark':
+            self.palette = 'light'
+            app.setPalette(self.palettes['light'], None)
+        elif self.palette == 'light':
+            self.palette = 'dark'
+            app.setPalette(self.palettes['dark'], None)
 
     def _cb_colormaps_handler(self):
         self.parameters.cmap = self.cb_colormaps.currentText()
@@ -269,7 +290,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _cb_from_zoom_handler(self):
         self.parameters.from_zoom = self.cb_from_zoom.isChecked()
-        self._show_image(self.curr_image.id_)
+        self.show_image(self.curr_image.id_)
 
     def _pb_apply_all_handler(self):
         pb = self.sender().objectName().split('_')[-1]
@@ -342,7 +363,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.sliders[group].blockSignals(True)
         self.sliders[group].setValue(event)
         im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole, )
-        self._show_image(im_id)
+        self.show_image(im_id)
         self.sliders[group].blockSignals(False)
 
     def _pb_load_handler(self):
@@ -354,8 +375,10 @@ class Main(QMainWindow, Ui_MainWindow):
         if not filenames:
             return
         self.parameters.last_dir = filenames[0][:filenames[0].rfind("/")]
+        self.open_files(filenames, group)
 
-        for filepath in filenames:
+    def open_files(self, filepaths: list, group: str):
+        for filepath in filepaths:
             valid = False
             while not valid:
                 valid = validate_input(filepath, self.parameters)
@@ -423,7 +446,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.combo_boxes[group].blockSignals(True)
         self.combo_boxes[group].setCurrentIndex(event)
         im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole, )
-        self._show_image(im_id)
+        self.show_image(im_id)
         self.combo_boxes[group].blockSignals(False)
 
     def _le_operation_handler(self):
@@ -467,7 +490,7 @@ class Main(QMainWindow, Ui_MainWindow):
         slider.blockSignals(True)
         slider.setValue(0)
         slider.blockSignals(False)
-        self._show_image(im_id)
+        self.show_image(im_id)
 
     def _image_loader_handler(self, event):
         arr, filepath, slot = event
@@ -482,13 +505,7 @@ class Main(QMainWindow, Ui_MainWindow):
             item.setText(filepath.split("/")[-1])
             item.setToolTip(filepath)
             item.setData(im_id, Qt.UserRole)
-            self.combo_boxes[slot].add_item(item)
-
-            item = QListWidgetItem()
-            item.setText(filepath.split("/")[-1])
-            item.setToolTip(filepath)
-            item.setData(im_id, Qt.UserRole)
-            self.list_widgets[slot].addItem(item)
+            self.models[slot].appendRow(item)
 
             self.log(f"File \"{filepath}\" loaded with ID: {im_id} in slot: {slot.upper()}.", LogTypes.Log)
             self.sliders[slot].setMaximum(self.combo_boxes[slot].count() - 1)
@@ -521,14 +538,14 @@ class Main(QMainWindow, Ui_MainWindow):
         self.sliders['lower'].setValue(0)
         self.sliders['upper'].setValue(100)
 
-        self.spin_boxes['rows_from'].setRange(0, self.curr_image.x_lim[0])
-        self.spin_boxes['rows_from'].setValue(self.curr_image.x_lim[0])
-        self.spin_boxes['rows_to'].setRange(0, self.curr_image.x_lim[1])
-        self.spin_boxes['rows_to'].setValue(self.curr_image.x_lim[1])
-        self.spin_boxes['columns_from'].setRange(0, self.curr_image.y_lim[0])
-        self.spin_boxes['columns_from'].setValue(self.curr_image.y_lim[1])
-        self.spin_boxes['columns_to'].setRange(0, self.curr_image.y_lim[0])
-        self.spin_boxes['columns_to'].setValue(self.curr_image.y_lim[0])
+        self.spin_boxes['rows_from'].setRange(0, self.curr_image.y_lim[0])
+        self.spin_boxes['rows_from'].setValue(self.curr_image.y_lim[1])
+        self.spin_boxes['rows_to'].setRange(0, self.curr_image.y_lim[0])
+        self.spin_boxes['rows_to'].setValue(self.curr_image.y_lim[0])
+        self.spin_boxes['columns_from'].setRange(0, self.curr_image.x_lim[1])
+        self.spin_boxes['columns_from'].setValue(self.curr_image.x_lim[0])
+        self.spin_boxes['columns_to'].setRange(0, self.curr_image.x_lim[1])
+        self.spin_boxes['columns_to'].setValue(self.curr_image.x_lim[1])
 
         self.l_im_mean.setText(str(self.curr_image.array.mean()))
         self.l_im_sigma.setText(str(self.curr_image.array.std()))
@@ -555,7 +572,7 @@ class Main(QMainWindow, Ui_MainWindow):
             return
         self.canvas_histogram.plot_histogram(self.curr_image, self.parameters, value)
 
-    def _show_image(self, im_id):
+    def show_image(self, im_id):
         image = self.images[im_id]
         self.curr_image = image
 

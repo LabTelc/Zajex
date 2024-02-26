@@ -15,7 +15,7 @@ def validate_input(filepath, parameters):
     if not os.path.exists(filepath) or not os.path.isfile(filepath):
         return None
     ft = filepath.split(".")[-1]
-    if ft == "bin":
+    if ft == "bin" or ft == 'pbf':
         size = os.path.getsize(filepath)
         if parameters.width > 0 and parameters.height > 0:
             dtype = int(parameters.dtype.split("t")[-1]) // 8

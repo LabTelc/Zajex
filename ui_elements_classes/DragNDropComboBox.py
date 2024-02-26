@@ -8,12 +8,15 @@ class DragNDropComboBox(QComboBox):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.model = QStandardItemModel(self)
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.start_drag)
-        self.setModel(self.model)
         self.setAcceptDrops(True)
+        self.model = None
+
+    def set_custom_model(self, custom_model):
+        self.model = custom_model
+        self.setModel(custom_model)
 
     def add_item(self, item):
         self.model.appendRow(item)
@@ -82,7 +85,7 @@ class DragNDropComboBox(QComboBox):
             event.acceptProposedAction()
             self.item_changed.emit()
 
-    def remove_item(self, im_id):
+    def remove_item(self, im_id):  # TODO use takeRow
         for row in range(self.model.rowCount()):
             item = self.model.item(row, 0)
             if item.data(Qt.UserRole, ) == im_id:
