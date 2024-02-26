@@ -1,3 +1,4 @@
+import numpy as np
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 
@@ -29,8 +30,11 @@ class MPLHistogramCanvas(QWidget):
         data = image.array.flatten()
         counts, bins, patches = self.ax.hist(data, bins=parameters.num_bins, edgecolor='none', linewidth=1.2)
 
-        self.ax.axvline(image.vmin, color='r')
-        self.ax.axvline(image.vmax, color='r')
+        try:
+            self.ax.axvline(image.vmin, color='r')
+            self.ax.axvline(image.vmax, color='r')
+        except np.linalg.LinAlgError:
+            pass
 
         bin_means = [(bins[i] + bins[i + 1]) / 2 for i in range(parameters.num_bins)]
         colormap = matplotlib.colormaps[parameters.cmap]

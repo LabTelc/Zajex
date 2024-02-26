@@ -23,7 +23,7 @@ class ImageLoaderThread(QThread):
                 fex = filepath.split('.')[-1]
                 arr = None
                 try:
-                    if fex == "bin":
+                    if fex == "bin" or fex == "pbf":
                         arr = np.memmap(filepath, mode='r', dtype=params.dtype, shape=(params.width, params.height))
                         arr = np.array(arr)
                     elif fex == 'txt':

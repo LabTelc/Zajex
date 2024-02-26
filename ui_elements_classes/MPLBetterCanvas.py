@@ -34,7 +34,7 @@ class MPLBetterCanvas(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         self.setLayout(layout)
-        # self.setAcceptDrops(True)
+        self.setAcceptDrops(True)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.canvas_menu)
         # Image showing
@@ -88,24 +88,26 @@ class MPLBetterCanvas(QWidget):
         self.image = self.window().curr_image
         self._imshow()
 
-    # def dragMoveEvent(self, event, **kwargs):
-    #     data = event.mimeData()
-    #     if data.hasFormat(list_item):
-    #         event.acceptProposedAction()
-    #
-    # def dragEnterEvent(self, event, **kwargs):
-    #     data = event.mimeData()
-    #     if data.hasFormat(list_item):
-    #         event.acceptProposedAction()
-    #
-    # def dropEvent(self, event, **kwargs):
-    #     data = event.mimeData()
-    #     if data.hasFormat(list_item):
-    #         data = data.data(list_item)
-    #         data = data.replace(b"\x00", b"")
-    #         a = data.indexOf(b'\xca')
-    #         b = data.indexOf(b'\n', a)
-    #         filepath = str(data[(a + 1):b], 'utf-8')
+    def dragEnterEvent(self, event, **kwargs):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event, **kwargs):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event, **kwargs):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            file_paths = [url.toLocalFile() for url in urls]
+            self.window().open_files(file_paths, "a")
+            event.accept()
+        else:
+            event.ignore()
 
     def on_mouse_move(self, event):
         if event.inaxes and self.image is not None:

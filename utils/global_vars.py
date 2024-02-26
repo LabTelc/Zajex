@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-supportedLoadFormats = ['bin', 'raw', 'txt', 'tif', 'jpg', 'png']
+supportedLoadFormats = ['bin', 'raw', 'txt', 'tif', 'jpg', 'png', 'pbf']
 supportedSaveFormats = ['tif', 'raw', 'bin', 'txt', 'jpg', 'png']
 save_formats_strings = {
     "raw": "EZRT raw file, version 2.5.0 (*.raw)",
