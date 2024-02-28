@@ -14,8 +14,10 @@ from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
+from ui_elements_classes.BatchDialog import BatchDialog
 from ui_elements_classes.FileInfoDialog import FileInfoDialog
 from ui_elements_classes.Palletes import *
+from ui_elements_classes.SettingsDialog import SettingsDialog
 from utils.ImageLoaderThread import ImageLoaderThread
 from utils.global_vars import *
 from utils.utils import *
@@ -145,6 +147,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.pb_rotate_cw.clicked: self._rotation_handler,
             self.cb_mirror_ud.stateChanged: self._mirror_handler,
             self.cb_mirror_lr.stateChanged: self._mirror_handler,
+            self.pb_apply_all_rot.clicked: self._pb_apply_all_handler,
             # - Save Current
             self.cb_save_current.save_signal: self._cb_save_handler,
 
@@ -178,15 +181,26 @@ class Main(QMainWindow, Ui_MainWindow):
             self.loader.image_loaded: self._image_loader_handler,
             self.canvas_main.selection_changed: self._selection_changed,
             self.canvas_main.pixel_selected: self.plot_histogram,
+
+            # List Views
+            self.lw_a.doubleClicked: self._lw_handler,
+            self.lw_b.doubleClicked: self._lw_handler,
+            self.lw_c.doubleClicked: self._lw_handler,
+            self.lw_d.doubleClicked: self._lw_handler,
+
+            self.lw_a.itemChanged: self._item_changed,
+            self.lw_b.itemChanged: self._item_changed,
+            self.lw_c.itemChanged: self._item_changed,
+            self.lw_d.itemChanged: self._item_changed,
         }
 
     def action_connection(self):
         self.aSetInputParams.triggered.connect(self._set_input_parameters)
         self.aSwitchTheme.triggered.connect(self.switch_theme)
+        self.a_Settings.triggered.connect(self._show_settings)
+        self.a_Batch_Processing.triggered.connect(self._batch_processing)
         # self.a_Load_Images.triggered.connect()
         # self.a_Save_Image.triggered.connect()
-        # self.a_Batch_Processing.triggered.connect()
-        # self.a_Settings.triggered.connect()
 
     def _set_input_parameters(self):
         dialog = FileInfoDialog(self, self.parameters, ftype="bin")
@@ -194,6 +208,20 @@ class Main(QMainWindow, Ui_MainWindow):
             self.parameters.width = dialog.result["width"]
             self.parameters.height = dialog.result["height"]
             self.parameters.dtype = dialog.result["dtype"]
+
+    def _show_settings(self):
+        dialog = SettingsDialog(self, self.parameters, ftype="bin")
+        if dialog.exec_() == QDialog.Accepted:
+            self.parameters.width = dialog.result["width"]
+            self.parameters.height = dialog.result["height"]
+            self.parameters.dtype = dialog.result["dtype"]
+            self.parameters.show_axes = dialog.result["show_axes"]
+            self.parameters.ratio = dialog.result["ratio"]
+
+    def _batch_processing(self):
+        dialog = BatchDialog(self, self.parameters)
+        if dialog.exec_() == QDialog.Accepted:
+            pass
 
     def switch_theme(self):
         if self.palette == 'dark':
@@ -236,16 +264,14 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _dsb_limits_handler(self, event):
         spin_box = self.sender().objectName().split('_')[-1]
+        if self.curr_image is None:
+            return
         arr = self.curr_image.array
         if self.parameters.from_zoom:
             arr = self._arr_from_zoom()
         if spin_box == "upper":
-            if event <= self.curr_image.vmin:
-                return
             self.curr_image.vmax = event
         elif spin_box == 'lower':
-            if event >= self.curr_image.vmax:
-                return
             self.curr_image.vmin = event
         self.sliders[spin_box].blockSignals(True)
         self.sliders[spin_box].setValue(int(100 * event / (arr.max() - arr.min())))
@@ -272,7 +298,16 @@ class Main(QMainWindow, Ui_MainWindow):
         elif idx == 2:  # 5/95
             self.curr_image.vmin = np.percentile(arr, 5)
             self.curr_image.vmax = np.percentile(arr, 95)
-        elif idx == 3:  # min+1/max-1
+        elif idx == 3:  # 0.1/99.9
+            self.curr_image.vmin = np.percentile(arr, 0.1)
+            self.curr_image.vmax = np.percentile(arr, 99.9)
+        elif idx == 4:  # 0.01/99.99
+            self.curr_image.vmin = np.percentile(arr, 0.01)
+            self.curr_image.vmax = np.percentile(arr, 99.99)
+        elif idx == 5:  # 0.001/99.999
+            self.curr_image.vmin = np.percentile(arr, 0.001)
+            self.curr_image.vmax = np.percentile(arr, 99.999)
+        elif idx == 6:  # min+1/max-1
             self.curr_image.vmin = arr.min() + 1
             self.curr_image.vmax = arr.max() - 1
 
@@ -302,6 +337,11 @@ class Main(QMainWindow, Ui_MainWindow):
             for img in self.images:
                 self.images[img].vmax = self.curr_image.vmax
                 self.images[img].vmin = self.curr_image.vmin
+        if pb == 'rot':
+            for img in self.images:
+                self.images[img].rotate = self.curr_image.rotate
+                self.images[img].mirror_UD = self.curr_image.mirror_UD
+                self.images[img].mirror_LR = self.curr_image.mirror_LR
 
     def _sb_rows_handler(self):
         self.curr_image.y_lim = (self.sb_rows_to.value(), self.sb_rows_from.value())
@@ -531,9 +571,7 @@ class Main(QMainWindow, Ui_MainWindow):
         for sl in [self.sliders['upper'], self.sliders['lower']]:
             sl.blockSignals(True)
 
-        self.spin_boxes['lower'].setRange(self.curr_image.vmin, self.curr_image.vmax)
         self.spin_boxes['lower'].setValue(self.curr_image.vmin)
-        self.spin_boxes['upper'].setRange(self.curr_image.vmin, self.curr_image.vmax)
         self.spin_boxes['upper'].setValue(self.curr_image.vmax)
         self.sliders['lower'].setValue(0)
         self.sliders['upper'].setValue(100)
@@ -566,6 +604,14 @@ class Main(QMainWindow, Ui_MainWindow):
         self.canvas_main.redraw()
         self.plot_histogram()
 
+    def _lw_handler(self, event):
+        group = self.sender().objectName().split('_')[-1]
+        self.sliders[group].blockSignals(True)
+        self.sliders[group].setValue(event.row())
+        im_id = self.list_widgets[group].get_custom_item(event).data(Qt.UserRole, )
+        self.show_image(im_id)
+        self.sliders[group].blockSignals(False)
+
     def plot_histogram(self, value=None):
         self.parameters.num_bins = self.slider_bins.value()
         if len(self.images) == 0:
@@ -575,6 +621,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def show_image(self, im_id):
         image = self.images[im_id]
         self.curr_image = image
+        self.cb_auto_range.setCurrentIndex(0)
 
         if self.parameters.from_zoom:
             arr = self._arr_from_zoom()
