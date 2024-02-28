@@ -15,7 +15,14 @@ supportedDataTypes = ['int8', 'int16', 'int32', 'int64',
                       'uint8', 'uint16', 'uint32', 'uint64',
                       'float8', 'float16', 'float32', 'float64']
 
-limits_dict = {0: "min - max", 1: "1 - 99", 2: "5 - 95", 3: "(min+1) - (max-1)"}
+limits_dict = {0: "min - max",
+               1: "1 - 99",
+               2: "5 - 95",
+               3: "0.1 - 99.9",
+               4: "0.01 - 99.99",
+               5: "0.001 - 99.999",
+               6: "(min+1) - (max-1)"}
+
 cmaps_list = ['gray', 'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'Greys', 'Purples', 'Blues', 'Greens',
               'Oranges', 'Reds', 'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu', 'GnBu', 'PuBu', 'YlGnBu',
               'PuBuGn', 'BuGn', 'YlGn', 'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink', 'spring', 'summer',
@@ -32,6 +39,8 @@ lFileTypeString = """
             All files (*.*)
             """
 rotation_list = ["0°", "90°", "180°", "270°"]
+
+item_type = "application/x-qabstractitemmodeldatalist"
 
 
 @dataclass
@@ -53,8 +62,7 @@ class Parameters:
     cmap: str = 'gray'
     from_zoom: bool = False
     last_dir: str = "./"
-    colorbar: bool = False
-    show_axis: bool = False
+    show_axes: bool = False
     num_bins: int = 30
     ratio: float = 1 / np.e
     tiff_bit_depth: str = str(np.uint16)

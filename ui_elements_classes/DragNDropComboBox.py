@@ -1,6 +1,6 @@
-from PyQt5.QtGui import QStandardItemModel, QDrag, QStandardItem
-from PyQt5.QtWidgets import QComboBox, QApplication
 from PyQt5.QtCore import Qt, QMimeData, QTimer, pyqtSignal
+from PyQt5.QtGui import QDrag, QStandardItem
+from PyQt5.QtWidgets import QComboBox, QApplication
 
 
 class DragNDropComboBox(QComboBox):
@@ -31,7 +31,7 @@ class DragNDropComboBox(QComboBox):
     def mousePressEvent(self, event, **kwargs):
         if event.button() == Qt.LeftButton:
             self.startPos = event.pos()
-            self.timer.start(300)
+            self.timer.start(200)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event, **kwargs):
@@ -55,6 +55,7 @@ class DragNDropComboBox(QComboBox):
         idx = self.model.index(current_index, 0)
         item = self.model.itemFromIndex(idx)
         im_id = item.data(Qt.UserRole, )
+
         drag = QDrag(self)
         mime_data = QMimeData()
         mime_data.setText(str(im_id))
@@ -62,15 +63,20 @@ class DragNDropComboBox(QComboBox):
         drag.exec_(Qt.MoveAction)
 
     def dragEnterEvent(self, event):
-        if event.mimeData().hasText():
-            event.acceptProposedAction()
+        if event.mimeData().hasText():    # text ~ moving items between combo boxes
+            event.acceptProposedAction()  # urls ~ loading new files
 
     def dragMoveEvent(self, event):
-        if event.mimeData().hasText():
-            event.acceptProposedAction()
+        if event.mimeData().hasText():    # text ~ moving items between combo boxes
+            event.acceptProposedAction()  # urls ~ loading new files
 
     def dropEvent(self, event):
-        if event.mimeData().hasText():
+        if event.mimeData().hasUrls():  # loading new files
+            urls = event.mimeData().urls()
+            file_paths = [url.toLocalFile() for url in urls]
+            self.window().open_files(file_paths, self.objectName().split("_")[-1])
+            event.accept()
+        elif event.mimeData().hasText():  # moving between combo boxes
             im_id = int(event.mimeData().text())
             event.source().remove_item(im_id)
             event.source().item_changed.emit()
@@ -84,6 +90,8 @@ class DragNDropComboBox(QComboBox):
 
             event.acceptProposedAction()
             self.item_changed.emit()
+        else:
+            event.ignore()
 
     def remove_item(self, im_id):  # TODO use takeRow
         for row in range(self.model.rowCount()):

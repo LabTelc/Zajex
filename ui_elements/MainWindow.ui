@@ -239,7 +239,7 @@
          </size>
         </property>
         <property name="title">
-         <string>Figure Settings</string>
+         <string>Image Settings</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <property name="spacing">
@@ -370,7 +370,7 @@
                 <item>
                  <widget class="QLabel" name="label_3">
                   <property name="text">
-                   <string>Intensity range (image limits xx yy)</string>
+                   <string>Intensity range:</string>
                   </property>
                  </widget>
                 </item>
@@ -385,6 +385,12 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_9">
                   <item>
                    <widget class="QSlider" name="slider_lower">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
                     <property name="maximum">
                      <number>100</number>
                     </property>
@@ -395,6 +401,12 @@
                   </item>
                   <item>
                    <widget class="QDoubleSpinBox" name="dsb_lower">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
                     <property name="minimum">
                      <double>-1000000000000.000000000000000</double>
                     </property>
@@ -419,6 +431,12 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_10">
                   <item>
                    <widget class="QSlider" name="slider_upper">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
                     <property name="maximum">
                      <number>100</number>
                     </property>
@@ -432,8 +450,11 @@
                   </item>
                   <item>
                    <widget class="QDoubleSpinBox" name="dsb_upper">
-                    <property name="decimals">
-                     <number>2</number>
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
                     </property>
                     <property name="minimum">
                      <double>-1000000000000.000000000000000</double>
@@ -886,7 +907,7 @@
         <enum>QTabWidget::South</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>2</number>
        </property>
        <property name="elideMode">
         <enum>Qt::ElideNone</enum>
@@ -957,6 +978,9 @@
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
               </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
              </widget>
             </item>
            </layout>
@@ -993,6 +1017,9 @@
              <widget class="DragNDropListView" name="lw_b">
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
               </property>
              </widget>
             </item>
@@ -1031,6 +1058,9 @@
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
               </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
              </widget>
             </item>
            </layout>
@@ -1067,6 +1097,9 @@
              <widget class="DragNDropListView" name="lw_d">
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
               </property>
              </widget>
             </item>
@@ -1119,7 +1152,7 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="a_Batch_processing"/>
+    <addaction name="a_Batch_Processing"/>
    </widget>
    <widget class="QMenu" name="menuSet_input_parameters">
     <property name="title">
@@ -1142,7 +1175,7 @@
     <string>Save Image</string>
    </property>
   </action>
-  <action name="a_Batch_processing">
+  <action name="a_Batch_Processing">
    <property name="text">
     <string>Batch processing</string>
    </property>

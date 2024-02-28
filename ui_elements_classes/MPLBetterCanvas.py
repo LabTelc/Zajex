@@ -41,36 +41,19 @@ class MPLBetterCanvas(QWidget):
         self.params = None
         self.image = None
         self.cbar = None
-        self.colorbar = None
 
     def _imshow(self):
         if self.image is None:
             return
         self.fig.delaxes(self.ax)
-        if self.colorbar is not None:
-            self.cax.clear()
-            self.cax.axis('off')
-            self.colorbar = None
+        self.ax = self.fig.add_axes((0, 0, 1, 1))
         arr = self.image.array
-        if not self.colorbar and not self.params.show_axis:
-            self.ax = self.fig.add_axes((0, 0, 1, 1))
-        elif self.colorbar and not self.params.show_axis:
-            self.ax = self.fig.add_axes((0, 0, 1, 0.9))
-        elif not self.colorbar and self.params.show_axis:
-            self.ax = self.fig.add_axes((0, 0.1, 0.95, 0.9))
-        elif self.colorbar and self.params.show_axis:
-            self.ax = self.fig.add_axes((0, 0.1, 0.95, 0.8))
         self.im = self.ax.imshow(arr, cmap=self.params.cmap, vmin=self.image.vmin, vmax=self.image.vmax)
 
-        self.ax.get_xaxis().set_visible(self.params.show_axis)
-        self.ax.get_yaxis().set_visible(self.params.show_axis)
+        self.ax.get_xaxis().set_visible(self.params.show_axes)
+        self.ax.get_yaxis().set_visible(self.params.show_axes)
         self.ax.set_xlim(self.image.x_lim)
         self.ax.set_ylim(self.image.y_lim)
-        if self.params.colorbar:
-            self.cax = self.fig.add_axes((0.9, 0.05, 0.01, 0.8))
-            self.cax.axis('on')
-            self.cax.set_frame_on(False)
-            self.colorbar = self.fig.colorbar(self.im, cax=self.cax, ax=self.ax)
         self.rect_selector = RectangleSelector(self.ax, self.on_select, useblit=True, button=[1], minspanx=5,
                                                minspany=5)
         self.ax.set_frame_on(False)

@@ -4,7 +4,7 @@ from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTextEdit
 from code import InteractiveConsole
 
-from  . import HistoryLineEdit
+from . import HistoryLineEdit
 
 
 class ConsoleWidget(QWidget):
@@ -25,6 +25,7 @@ class ConsoleWidget(QWidget):
         self.capture_output = CaptureOutput(self.text_edit)
         self.interpreter = InteractiveConsole()
         self.interpreter.runsource("import numpy as np")
+        self.text_edit.append("For reference to application use app\nFor reference to image dict use images\n")
 
     def run_code(self):
         code = self.console_input.text()
