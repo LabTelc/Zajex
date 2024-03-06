@@ -32,26 +32,24 @@ def validate_input(filepath, parameters):
 
 
 def save_jpg(mat, name, path, **kwargs):
-    mat = mat.astype(np.uint8)
+    mat = normalize_array(mat, kwargs["dtype"])
     im = Image.fromarray(mat)
     im.save(f"{path}/{name}.jpg")
 
 
 def save_png(mat, name, path, **kwargs):
-    mat = mat.astype(np.uint8)
+    mat = normalize_array(mat, kwargs["dtype"])
     im = Image.fromarray(mat)
     im.save(f"{path}/{name}.png")
 
 
 def save_tif(mat, name, path, **kwargs):
-    mat = mat.astype(np.uint16)
+    mat = normalize_array(mat, kwargs["dtype"])
     tifffile.imwrite(f"{path}/{name}.tif", mat, photometric='minisblack')
 
 
 def save_raw(mat, name, path, **kwargs):
-    if "dtype" in kwargs:
-        dtype = kwargs["dtype"]
-        mat = mat.astype(dtype)
+    mat = normalize_array(mat, kwargs["dtype"])
     header = kwargs["header"]
     header_packed = header.getPacked()[1]
 
@@ -61,9 +59,7 @@ def save_raw(mat, name, path, **kwargs):
 
 
 def save_txt(mat, name, path, **kwargs):
-    if "dtype" in kwargs:
-        dtype = kwargs["dtype"]
-        mat = mat.astype(dtype)
+    mat = normalize_array(mat, kwargs["dtype"])
     if np.issubdtype(mat.dtype, np.integer):
         fmt = '%d'  # integer format
     elif np.issubdtype(mat.dtype, np.floating):
@@ -75,9 +71,7 @@ def save_txt(mat, name, path, **kwargs):
 
 
 def save_bin(mat, name, path, **kwargs):
-    if "dtype" in kwargs:
-        dtype = kwargs["dtype"]
-        mat = mat.astype(dtype)
+    mat = normalize_array(mat, kwargs["dtype"])
     mat.tofile(f"{path}/{name}.bin")
 
 
@@ -94,3 +88,11 @@ def get_save_image(filetype):
         return save_bin
     elif filetype == "txt":
         return save_txt
+
+
+def normalize_array(array: np.array, dtype: np.dtype):
+    if np.issubdtype(dtype, np.integer):
+        dtype_max = np.iinfo(dtype).max
+        return ((array - array.min()) / (array.max() - array.min()) * dtype_max).astype(dtype)
+    else:
+        return array

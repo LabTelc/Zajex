@@ -169,6 +169,10 @@ class MPLBetterCanvas(QWidget):
             #     else:
             #         self.prev_.emit()
 
+    def reset_canvas(self):
+        self.ax.clear()
+        self.canvas.draw()
+
 
 def smaller(number, const):
     if number < const:

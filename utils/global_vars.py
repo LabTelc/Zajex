@@ -9,11 +9,29 @@ save_formats_strings = {
     "txt": "ASCII text file (*.txt)",
     "tif": "TIFF file (*.tif)",
     "jpg": "JPEG image file (*.jpg)",
-    "png": "PNG file (*.png)"
+    "png": "PNG file (*.png)",
+    "pbf": "PBF image file (*.pbf)",
 }
 supportedDataTypes = ['int8', 'int16', 'int32', 'int64',
                       'uint8', 'uint16', 'uint32', 'uint64',
                       'float8', 'float16', 'float32', 'float64']
+
+supportedDataTypesByFileType = {
+    "tif": ["uint8", "uint16", "uint32", "uint64",
+            "int8", "int16", "int32", "int64",
+            "float16", "float32", "float64"],
+    "raw": ['int8', 'int16', 'int32', 'int64',
+            'uint8', 'uint16', 'uint32', 'uint64',
+            'float8', 'float16', 'float32', 'float64'],
+    "bin": ['int8', 'int16', 'int32', 'int64',
+            'uint8', 'uint16', 'uint32', 'uint64',
+            'float8', 'float16', 'float32', 'float64'],
+    "jpg": ["uint8"],
+    "png": ["uint8"],
+    "txt": ['int8', 'int16', 'int32', 'int64',
+            'uint8', 'uint16', 'uint32', 'uint64',
+            'float8', 'float16', 'float32', 'float64'],
+}
 
 limits_dict = {0: "min - max",
                1: "1 - 99",
