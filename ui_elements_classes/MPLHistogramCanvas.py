@@ -6,6 +6,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
+from utils.global_vars import LogTypes
+
 
 class MPLHistogramCanvas(QWidget):
     def __init__(self, parent=None):
@@ -27,40 +29,47 @@ class MPLHistogramCanvas(QWidget):
 
     def plot_histogram(self, image, parameters, value=None):
         self.ax.clear()
-        data = image.array.flatten()
-        counts, bins, patches = self.ax.hist(data, bins=parameters.num_bins, edgecolor='none', linewidth=1.2)
-
         try:
-            self.ax.axvline(image.vmin, color='r')
-            self.ax.axvline(image.vmax, color='r')
-        except np.linalg.LinAlgError:
-            pass
+            data = image.array.flatten()
+            counts, bins, patches = self.ax.hist(data, bins=parameters.num_bins, edgecolor='none', linewidth=1.2)
 
-        bin_means = [(bins[i] + bins[i + 1]) / 2 for i in range(parameters.num_bins)]
-        colormap = matplotlib.colormaps[parameters.cmap]
-        norm_bin_means = (bin_means - image.vmin) / (image.vmax - image.vmin)
+            try:
+                self.ax.axvline(image.vmin, color='r')
+                self.ax.axvline(image.vmax, color='r')
+            except np.linalg.LinAlgError:
+                pass
 
-        # Assign colors to the patches based on the mean values
-        for i, patch in enumerate(patches):
-            color = colormap(norm_bin_means[i])
-            patch.set_facecolor(color)
+            bin_means = [(bins[i] + bins[i + 1]) / 2 for i in range(parameters.num_bins)]
+            colormap = matplotlib.colormaps[parameters.cmap]
+            norm_bin_means = (bin_means - np.array(image.vmin)) / (image.vmax - image.vmin)
 
-        arrow_value = parameters.ratio * (image.vmax - image.vmin) + image.vmin
-        for i, bin_mean in enumerate(bin_means):
-            if bins[i] <= arrow_value <= bins[i + 1]:
-                self.ax.annotate("", xy=(bin_mean, max(counts)), xytext=(bin_mean, max(counts) + 10),
-                                 arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color="red",
-                                                 lw=2))
+            # Assign colors to the patches based on the mean values
+            for i, patch in enumerate(patches):
+                color = colormap(norm_bin_means[i])
+                patch.set_facecolor(color)
 
-            if value is not None:
-                if bins[i] <= value <= bins[i + 1]:
-                    patches[i].set_facecolor('green')
+            arrow_value = parameters.ratio * (image.vmax - image.vmin) + image.vmin
+            for i, bin_mean in enumerate(bin_means):
+                if bins[i] <= arrow_value <= bins[i + 1]:
+                    self.ax.annotate("", xy=(bin_mean, max(counts)), xytext=(bin_mean, max(counts) + 10),
+                                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color="red",
+                                                     lw=2))
 
-        self.ax.grid(True)
-        self.canvas.draw()
+                if value is not None:
+                    if bins[i] <= value <= bins[i + 1]:
+                        patches[i].set_facecolor('green')
+
+            self.ax.grid(True)
+            self.canvas.draw()
+        except Exception as e:
+            self.window().log(e, LogTypes.Error)
 
     def on_mouse_move(self, event):
         if event.inaxes:
             self.label.setText(f"{event.xdata}")
         else:
             self.label.setText("")
+
+    def reset_canvas(self):
+        self.ax.clear()
+        self.canvas.draw()

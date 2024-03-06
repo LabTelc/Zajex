@@ -16,9 +16,12 @@ from PyQt5.uic import loadUiType
 
 from ui_elements_classes.BatchDialog import BatchDialog
 from ui_elements_classes.FileInfoDialog import FileInfoDialog
+from ui_elements_classes.LoadImagesDialog import LoadImagesDialog
 from ui_elements_classes.Palletes import *
+from ui_elements_classes.SaveImagesDialog import SaveImagesDialog
 from ui_elements_classes.SettingsDialog import SettingsDialog
 from utils.ImageLoaderThread import ImageLoaderThread
+from utils.ImageSaverThread import ImageSaverThread
 from utils.global_vars import *
 from utils.utils import *
 
@@ -42,11 +45,17 @@ class Main(QMainWindow, Ui_MainWindow):
         self.palette = 'dark'
         app.setPalette(self.palettes['dark'], None)
 
-        self.image_queue = Queue()
-        self.loader = ImageLoaderThread(self, image_queue=self.image_queue)
-        self.loader.start()
         self.curr_image = None
         self.images = {}
+
+        self.loading_queue = Queue()
+        self.loading_thread = ImageLoaderThread(self, image_queue=self.loading_queue)
+        self.loading_thread.start()
+
+        self.saving_queue = Queue()
+        self.saving_thread = ImageSaverThread(self, image_queue=self.saving_queue, images=self.images)
+        self.saving_thread.start()
+
         input_handling_functions = self._input_handling_functions()
         for signal in input_handling_functions.keys():
             signal.connect(input_handling_functions[signal])
@@ -57,7 +66,7 @@ class Main(QMainWindow, Ui_MainWindow):
             "c": self.cb_images_c,
             "d": self.cb_images_d,
         }
-        self.list_widgets = {
+        self.list_views = {
             "a": self.lw_a,
             "b": self.lw_b,
             "c": self.lw_c,
@@ -87,7 +96,7 @@ class Main(QMainWindow, Ui_MainWindow):
         }
         for model in self.models.keys():
             self.combo_boxes[model].set_custom_model(self.models[model])
-            self.list_widgets[model].set_custom_model(self.models[model])
+            self.list_views[model].set_custom_model(self.models[model])
 
         self.collapsible_widgets = [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram,
                                     self.gb_rot_mir, self.gb_a, self.gb_b, self.gb_c, self.gb_d,]
@@ -178,7 +187,9 @@ class Main(QMainWindow, Ui_MainWindow):
             self.slider_d.valueChanged: self._slider_handler,
 
             # Other
-            self.loader.image_loaded: self._image_loader_handler,
+            self.loading_thread.image_loaded: self._image_loader_handler,
+            self.saving_thread.image_saved: self._image_saver_handler,
+            self.saving_thread.delete_signal: self._remove_handler,
             self.canvas_main.selection_changed: self._selection_changed,
             self.canvas_main.pixel_selected: self.plot_histogram,
 
@@ -199,8 +210,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.aSwitchTheme.triggered.connect(self.switch_theme)
         self.a_Settings.triggered.connect(self._show_settings)
         self.a_Batch_Processing.triggered.connect(self._batch_processing)
-        # self.a_Load_Images.triggered.connect()
-        # self.a_Save_Image.triggered.connect()
+        self.a_Load_Images.triggered.connect(self._a_load_images_handler)
+        self.a_Save_Image.triggered.connect(self._a_save_image_handler)
 
     def _set_input_parameters(self):
         dialog = FileInfoDialog(self, self.parameters, ftype="bin")
@@ -339,7 +350,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 self.images[img].vmin = self.curr_image.vmin
         if pb == 'rot':
             for img in self.images:
-                self.images[img].rotate = self.curr_image.rotate
+                self.images[img].rotation = self.curr_image.rotation
                 self.images[img].mirror_UD = self.curr_image.mirror_UD
                 self.images[img].mirror_LR = self.curr_image.mirror_LR
 
@@ -408,7 +419,9 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _pb_load_handler(self):
         group = self.sender().objectName().split("_")[-1]
+        self._load_images(group)
 
+    def _load_images(self, group):
         filenames, filter_ = QFileDialog.getOpenFileNames(self, "Load images...",
                                                           self.parameters.last_dir, lFileTypeString,
                                                           initialFilter="All files (*.*)")
@@ -416,6 +429,20 @@ class Main(QMainWindow, Ui_MainWindow):
             return
         self.parameters.last_dir = filenames[0][:filenames[0].rfind("/")]
         self.open_files(filenames, group)
+
+    def _a_save_image_handler(self):
+        dialog = SaveImagesDialog(self, self.models, self.saving_queue)
+        if dialog.exec_():
+            self.saving_thread.wake()
+
+            if dialog.result is None:
+                return
+            models = dialog.result
+            for model in ["a", "b", "c", "d"]:
+                model_new = models[model]
+                self.models[model] = model_new
+                self.list_views[model].set_custom_model(model_new)
+                self.combo_boxes[model].set_custom_model(model_new)
 
     def open_files(self, filepaths: list, group: str):
         for filepath in filepaths:
@@ -435,10 +462,10 @@ class Main(QMainWindow, Ui_MainWindow):
             if valid is None:
                 self.log(f"File \"{filepath}\" could not be loaded.", LogTypes.Error)
             else:
-                self.image_queue.put((filepath, self.parameters, group))
+                self.loading_queue.put((filepath, self.parameters, group))
 
-        self.statusbar.start_progress(self.image_queue.qsize())
-        self.loader.wake()
+        self.statusbar.start_progress(self.loading_queue.qsize())
+        self.loading_thread.wake()
 
     def _cb_save_handler(self):
         if self.curr_image is None:
@@ -446,12 +473,16 @@ class Main(QMainWindow, Ui_MainWindow):
         combo = self.sender().objectName().split("_")[-1]
         ftype = self.sender().currentText().split("[")[-1][:3]
 
-        kwargs = {}
+        if ftype in ["jpg", "png"]:
+            kwargs = {"dtype": "uint8"}
+        else:
+            kwargs = {"dtype": "uint16"}
+
         # if ftype == 'raw':
         #     kwargs['header'] = header
 
         if combo == "current":
-            file_path, _ = QFileDialog.getSaveFileName(self, "Save picture", "",
+            file_path, _ = QFileDialog.getSaveFileName(self, "Save images", "",
                                                        save_formats_strings[ftype], )
             if file_path != "":
                 arr = self.curr_image.array
@@ -459,27 +490,17 @@ class Main(QMainWindow, Ui_MainWindow):
                 file_path = "/".join(file_path.split("/")[:-1])
                 get_save_image(ftype)(arr, name, file_path, **kwargs)
         else:
-            file_path = QFileDialog.getExistingDirectory(self, f"Save picture from {combo}", "")
+            file_path = QFileDialog.getExistingDirectory(self, f"Save images from {combo}", "")
             if file_path != "":
-                im_ids = []
                 combo = self.combo_boxes[combo]
                 for i in range(combo.count()):
                     im_id = combo.get_custom_item(i).data(Qt.UserRole, )
-                    im_ids.append(im_id)
-                self._save_images(im_ids, ftype, file_path)
+                    self.saving_queue.put((im_id, ftype, file_path, kwargs))
+                self._save_images()
 
-    def _save_images(self, im_ids, ftype, file_path):
-        self.statusbar.start_progress(len(im_ids))
-        kwargs = {}
-
-        for im_id in im_ids:
-            mat, fp = self.images[im_id]
-            name = fp.split("/")[-1].split(".")[:-1]
-            name = "".join(name)
-            while os.path.exists(os.path.join(file_path, name + "." + ftype)):
-                name = name + "(1)"
-            get_save_image(ftype)(mat, name, file_path, **kwargs)
-            self.statusbar.add_progress()
+    def _save_images(self):
+        self.statusbar.start_progress(self.saving_queue.qsize())
+        self.saving_thread.wake()
 
     def _slider_handler(self, event):
         group = self.sender().objectName().split("_")[-1]
@@ -517,12 +538,14 @@ class Main(QMainWindow, Ui_MainWindow):
         tooltip = text.replace("a", "\t").replace("b", '\n').replace("c", '\r')
         tooltip = tooltip.replace("\t", f"[{fp_a.split("/")[-1]}]").replace("\n", f"[{fp_b.split("/")[-1]}]")
         tooltip = tooltip.replace("\r", f"[{fp_c.split("/")[-1]}]")
+
         item = QStandardItem()
         item.setText(text)
         item.setToolTip(tooltip)
         im_id = next(self.id_gen)
         item.setData(im_id, Qt.UserRole)
         combo.add_item(item)
+
         self.images[im_id] = ImageObject(image, image.min(), image.max(), (0, image.shape[1]),
                                          (image.shape[0], 0), im_id, tooltip)
 
@@ -551,9 +574,22 @@ class Main(QMainWindow, Ui_MainWindow):
             self.sliders[slot].setMaximum(self.combo_boxes[slot].count() - 1)
             self.sliders[slot].blockSignals(False)
             self.combo_boxes[slot].blockSignals(False)
+
+            if self.curr_image is None:
+                self.show_image(im_id)
         else:
             self.log(f"File \"{filepath}\" could not be loaded.", LogTypes.Error)
         self.statusbar.add_progress()
+
+    def _image_saver_handler(self, file):
+        self.log(f"Saved \"{file}\"")
+        self.statusbar.add_progress()
+
+    def _remove_handler(self, im_id):
+        if im_id == self.canvas_main.image.id_:
+            self.canvas_main.reset_canvas()
+            self.canvas_histogram.reset_canvas()
+        self.images[im_id] = None
 
     def _item_changed(self):
         slot = self.sender().objectName().split("_")[-1]
@@ -608,9 +644,15 @@ class Main(QMainWindow, Ui_MainWindow):
         group = self.sender().objectName().split('_')[-1]
         self.sliders[group].blockSignals(True)
         self.sliders[group].setValue(event.row())
-        im_id = self.list_widgets[group].get_custom_item(event).data(Qt.UserRole, )
+        im_id = self.list_views[group].get_custom_item(event).data(Qt.UserRole, )
         self.show_image(im_id)
         self.sliders[group].blockSignals(False)
+
+    def _a_load_images_handler(self, event):
+        dialog = LoadImagesDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            group = dialog.result
+            self._load_images(group)
 
     def plot_histogram(self, value=None):
         self.parameters.num_bins = self.slider_bins.value()
@@ -652,8 +694,10 @@ class Main(QMainWindow, Ui_MainWindow):
         super().resizeEvent(event)
 
     def closeEvent(self, event):
-        self.loader.requestInterruption()
-        self.loader.wake()
+        self.loading_thread.requestInterruption()
+        self.loading_thread.wake()
+        self.saving_thread.requestInterruption()
+        self.saving_thread.wake()
         event.accept()
         app.exit(0)
 

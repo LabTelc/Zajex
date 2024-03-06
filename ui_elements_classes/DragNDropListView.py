@@ -12,10 +12,26 @@ class DragNDropListView(QListView):
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         self.model = None
+        self.moving_method = None
 
     def set_custom_model(self, custom_model):
         self.model = custom_model
         self.setModel(custom_model)
+        self.moving_method = self.model.takeRow
+
+    def set_move_mode(self, mode="copy"):
+        """
+        Method for switching between copy and move in moving items between list views
+        :param mode: copy or move
+        """
+        if mode == "copy":
+            self.moving_method = self.copy_method
+        elif mode == "move":
+            self.moving_method = self.model.takeRow
+
+    def copy_method(self, row):
+        item = self.model.item(row)
+        return item.clone()
 
     def dragEnterEvent(self, event, **kwargs):
         if event.mimeData().hasUrls() or event.mimeData().hasFormat(item_type):
@@ -39,8 +55,8 @@ class DragNDropListView(QListView):
         elif event.mimeData().hasFormat(item_type):  # moving between list views
             selected_indexes = event.source().selectedIndexes()
             for index in reversed(selected_indexes):  # to avoid index shifting
-                item = event.source().model.takeRow(index.row())
-                if len(item) > 0:
+                item = event.source().moving_method(index.row())
+                if item is not None:
                     self.model.insertRow(0, item)
 
             event.source().itemChanged.emit()
@@ -67,4 +83,5 @@ class DragNDropListView(QListView):
             item = self.model.item(row, 0)
             if item.data(Qt.UserRole, ) == im_id:
                 self.model.removeRow(row)
+                self.window().images[im_id] = None
                 break
