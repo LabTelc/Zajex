@@ -96,3 +96,30 @@ def normalize_array(array: np.array, dtype: np.dtype):
         return ((array - array.min()) / (array.max() - array.min()) * dtype_max).astype(dtype)
     else:
         return array
+
+
+def limits(arr: np.array, index: int) -> tuple:
+    if index == 0:  # min/max
+        vmin = arr.min()
+        vmax = arr.max()
+    elif index == 1:  # 1/99
+        vmin = np.percentile(arr, 1)
+        vmax = np.percentile(arr, 99)
+    elif index == 2:  # 5/95
+        vmin = np.percentile(arr, 5)
+        vmax = np.percentile(arr, 95)
+    elif index == 3:  # 0.1/99.9
+        vmin = np.percentile(arr, 0.1)
+        vmax = np.percentile(arr, 99.9)
+    elif index == 4:  # 0.01/99.99
+        vmin = np.percentile(arr, 0.01)
+        vmax = np.percentile(arr, 99.99)
+    elif index == 5:  # 0.001/99.999
+        vmin = np.percentile(arr, 0.001)
+        vmax = np.percentile(arr, 99.999)
+    elif index == 6:  # min+1/max-1
+        vmin = arr.min() + 1
+        vmax = arr.max() - 1
+    else:
+        raise ValueError("Index out of range")
+    return vmin, vmax

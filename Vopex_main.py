@@ -46,6 +46,7 @@ class Main(QMainWindow, Ui_MainWindow):
         app.setPalette(self.palettes['dark'], None)
 
         self.curr_image = None
+        self.last_image_id = None
         self.images = {}
 
         self.loading_queue = Queue()
@@ -134,18 +135,18 @@ class Main(QMainWindow, Ui_MainWindow):
             # Figure settings
             # - Intensity values
             self.cb_colormaps.currentIndexChanged: self._cb_colormaps_handler,
-            self.slider_lower.valueChanged: self._slider_limits_handler,
-            self.slider_upper.valueChanged: self._slider_limits_handler,
-            self.dsb_upper.valueChanged: self._dsb_limits_handler,
-            self.dsb_lower.valueChanged: self._dsb_limits_handler,
+            self.slider_lower.sliderReleased: self._slider_limits_handler,
+            self.slider_upper.sliderReleased: self._slider_limits_handler,
+            self.dsb_upper.editingFinished: self._dsb_limits_handler,
+            self.dsb_lower.editingFinished: self._dsb_limits_handler,
             self.cb_auto_range.currentIndexChanged: self._cb_auto_range_handler,
             self.cb_from_zoom.stateChanged: self._cb_from_zoom_handler,
             self.pb_apply_all_range.clicked: self._pb_apply_all_handler,
             # - Zoomed Area
-            self.sb_rows_from.valueChanged: self._sb_rows_handler,
-            self.sb_rows_to.valueChanged: self._sb_rows_handler,
-            self.sb_columns_from.valueChanged: self._sb_columns_handler,
-            self.sb_columns_to.valueChanged: self._sb_columns_handler,
+            self.sb_rows_from.editingFinished: self._sb_rows_handler,
+            self.sb_rows_to.editingFinished: self._sb_rows_handler,
+            self.sb_columns_from.editingFinished: self._sb_columns_handler,
+            self.sb_columns_to.editingFinished: self._sb_columns_handler,
             self.pb_unzoom.clicked: self._un_zoom,
             self.pb_apply_all_zoom.clicked: self._pb_apply_all_handler,
             # - Histogram
@@ -188,6 +189,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
             # Other
             self.loading_thread.image_loaded: self._image_loader_handler,
+            self.loading_thread.last_image: self._last_image_handler,
             self.saving_thread.image_saved: self._image_saver_handler,
             self.saving_thread.delete_signal: self._remove_handler,
             self.canvas_main.selection_changed: self._selection_changed,
@@ -247,7 +249,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.canvas_main.redraw()
         self.plot_histogram()
 
-    def _slider_limits_handler(self, event):
+    def _slider_limits_handler(self):
         if self.curr_image is None:
             return
         arr = self.curr_image.array
@@ -255,25 +257,27 @@ class Main(QMainWindow, Ui_MainWindow):
             arr = self._arr_from_zoom()
         arr_diff = arr.max() - arr.min()
         slider = self.sender().objectName().split('_')[-1]
+        value = self.sender().value()
 
         if slider == "upper":
-            if event <= self.sliders["lower"].value():
+            if value <= self.sliders["lower"].value():
                 self.sender().setValue(self.sliders["lower"].value() + 1)
                 return
-            self.curr_image.vmax = event * arr_diff / 100 + arr.min()
+            self.curr_image.vmax = value * arr_diff / 100 + arr.min()
         elif slider == "lower":
-            if event >= self.sliders["upper"].value():
+            if value >= self.sliders["upper"].value():
                 self.sender().setValue(self.sliders["upper"].value() - 1)
                 return
-            self.curr_image.vmin = event * arr_diff / 100 + arr.min()
+            self.curr_image.vmin = value * arr_diff / 100 + arr.min()
 
         self.spin_boxes[slider].blockSignals(True)
-        self.spin_boxes[slider].setValue(event * arr_diff / 100)
+        self.spin_boxes[slider].setValue(value * arr_diff / 100)
         self.spin_boxes[slider].blockSignals(False)
         self.canvas_main.redraw()
         self.plot_histogram()
 
-    def _dsb_limits_handler(self, event):
+    def _dsb_limits_handler(self):
+        value = self.sender().value()
         spin_box = self.sender().objectName().split('_')[-1]
         if self.curr_image is None:
             return
@@ -281,11 +285,11 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.parameters.from_zoom:
             arr = self._arr_from_zoom()
         if spin_box == "upper":
-            self.curr_image.vmax = event
+            self.curr_image.vmax = value
         elif spin_box == 'lower':
-            self.curr_image.vmin = event
+            self.curr_image.vmin = value
         self.sliders[spin_box].blockSignals(True)
-        self.sliders[spin_box].setValue(int(100 * event / (arr.max() - arr.min())))
+        self.sliders[spin_box].setValue(int(100 * value / (arr.max() - arr.min())))
         self.sliders[spin_box].blockSignals(False)
         self.canvas_main.redraw()
         self.plot_histogram()
@@ -300,27 +304,7 @@ class Main(QMainWindow, Ui_MainWindow):
             arr = self.curr_image.array
 
         idx = self.cb_auto_range.currentIndex()
-        if idx == 0:  # min/max
-            self.curr_image.vmin = arr.min()
-            self.curr_image.vmax = arr.max()
-        elif idx == 1:  # 1/99
-            self.curr_image.vmin = np.percentile(arr, 1)
-            self.curr_image.vmax = np.percentile(arr, 99)
-        elif idx == 2:  # 5/95
-            self.curr_image.vmin = np.percentile(arr, 5)
-            self.curr_image.vmax = np.percentile(arr, 95)
-        elif idx == 3:  # 0.1/99.9
-            self.curr_image.vmin = np.percentile(arr, 0.1)
-            self.curr_image.vmax = np.percentile(arr, 99.9)
-        elif idx == 4:  # 0.01/99.99
-            self.curr_image.vmin = np.percentile(arr, 0.01)
-            self.curr_image.vmax = np.percentile(arr, 99.99)
-        elif idx == 5:  # 0.001/99.999
-            self.curr_image.vmin = np.percentile(arr, 0.001)
-            self.curr_image.vmax = np.percentile(arr, 99.999)
-        elif idx == 6:  # min+1/max-1
-            self.curr_image.vmin = arr.min() + 1
-            self.curr_image.vmax = arr.max() - 1
+        self.curr_image.vmin, self.curr_image.vmax = limits(arr, idx)
 
         for el in [self.sliders['upper'], self.sliders['lower'], self.dsb_lower, self.dsb_upper]:
             el.blockSignals(True)
@@ -536,8 +520,8 @@ class Main(QMainWindow, Ui_MainWindow):
             return
 
         tooltip = text.replace("a", "\t").replace("b", '\n').replace("c", '\r')
-        tooltip = tooltip.replace("\t", f"[{fp_a.split("/")[-1]}]").replace("\n", f"[{fp_b.split("/")[-1]}]")
-        tooltip = tooltip.replace("\r", f"[{fp_c.split("/")[-1]}]")
+        tooltip = tooltip.replace("\t", f"[{fp_a.split('/')[-1]}]").replace("\n", f"[{fp_b.split('/')[-1]}]")
+        tooltip = tooltip.replace("\r", f"[{fp_c.split('/')[-1]}]")
 
         item = QStandardItem()
         item.setText(text)
@@ -563,6 +547,7 @@ class Main(QMainWindow, Ui_MainWindow):
             im_id = next(self.id_gen)
             img = ImageObject(arr, arr.min(), arr.max(), (0, arr.shape[1]), (arr.shape[0], 0), im_id, filepath)
             self.images[im_id] = img
+            self.last_image_id = im_id
 
             item = QStandardItem()
             item.setText(filepath.split("/")[-1])
@@ -575,11 +560,12 @@ class Main(QMainWindow, Ui_MainWindow):
             self.sliders[slot].blockSignals(False)
             self.combo_boxes[slot].blockSignals(False)
 
-            if self.curr_image is None:
-                self.show_image(im_id)
         else:
             self.log(f"File \"{filepath}\" could not be loaded.", LogTypes.Error)
         self.statusbar.add_progress()
+
+    def _last_image_handler(self):
+        self.show_image(self.last_image_id)
 
     def _image_saver_handler(self, file):
         self.log(f"Saved \"{file}\"")

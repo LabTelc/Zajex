@@ -8,6 +8,7 @@ from . import EZRT
 
 class ImageLoaderThread(QThread):
     image_loaded = pyqtSignal(tuple, name="image_loaded")
+    last_image = pyqtSignal(name="last_image")
 
     def __init__(self, parent=None, image_queue: queue.Queue = None):
         super().__init__(parent=parent)
@@ -46,6 +47,8 @@ class ImageLoaderThread(QThread):
                     arr = None
                     filepath = e
                 self.image_loaded.emit((arr, filepath, slot))
+                if self.image_queue.empty():
+                    self.last_image.emit()
             self.wait_for_signal()
 
     def wait_for_signal(self):
