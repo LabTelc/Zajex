@@ -5,5 +5,5 @@
 !icon_64x.png
 !Vopex3.yml
 !.gitignore
-tmp.py
+tmp*.py
 data
