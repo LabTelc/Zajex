@@ -1,3 +1,4 @@
+import os.path
 import queue
 from PyQt5.QtCore import pyqtSignal, QThread, QMutex, QWaitCondition
 import numpy as np
@@ -22,12 +23,8 @@ class ImageLoaderThread(QThread):
             while not self.image_queue.empty():
                 filepath, params, slot = self.image_queue.get()
                 fex = filepath.split('.')[-1]
-                arr = None
                 try:
-                    if fex == "bin" or fex == "pbf":
-                        arr = np.memmap(filepath, mode='r', dtype=params.dtype, shape=(params.width, params.height))
-                        arr = np.array(arr)
-                    elif fex == 'txt':
+                    if fex == 'txt':
                         with open(filepath, 'r') as f:
                             arr = np.array([[x for x in line.split()] for line in f], params.dtype)
                     elif fex == 'raw':
@@ -43,6 +40,12 @@ class ImageLoaderThread(QThread):
                             if arr.shape[2] > 3:
                                 arr = arr[:, :, :3]
                             arr = np.dot(arr, [0.299, 0.587, 0.114])
+                    else:
+                        offset = (os.path.getsize(filepath) -
+                                  (params.width*params.height*np.dtype(params.dtype).itemsize))
+                        arr = np.memmap(filepath, mode='r', dtype=params.dtype, shape=(params.width, params.height),
+                                        offset=offset)
+                        arr = np.array(arr)
                 except Exception as e:
                     arr = None
                     filepath = e

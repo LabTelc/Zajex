@@ -48,6 +48,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.curr_image = None
         self.last_image_id = None
         self.images = {}
+        self.last_action_ = None
 
         self.loading_queue = Queue()
         self.loading_thread = ImageLoaderThread(self, image_queue=self.loading_queue)
@@ -202,9 +203,13 @@ class Main(QMainWindow, Ui_MainWindow):
             self.lw_d.doubleClicked: self._lw_handler,
 
             self.lw_a.itemChanged: self._item_changed,
+            self.lw_a.itemDeleted: self._remove_handler,
             self.lw_b.itemChanged: self._item_changed,
+            self.lw_b.itemDeleted: self._remove_handler,
             self.lw_c.itemChanged: self._item_changed,
+            self.lw_c.itemDeleted: self._remove_handler,
             self.lw_d.itemChanged: self._item_changed,
+            self.lw_d.itemDeleted: self._remove_handler,
         }
 
     def action_connection(self):
@@ -250,6 +255,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.plot_histogram()
 
     def _slider_limits_handler(self):
+        self.last_action_ = "m"
         if self.curr_image is None:
             return
         arr = self.curr_image.array
@@ -279,6 +285,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def _dsb_limits_handler(self):
         value = self.sender().value()
         spin_box = self.sender().objectName().split('_')[-1]
+        self.last_action_ = "m"
         if self.curr_image is None:
             return
         arr = self.curr_image.array
@@ -297,7 +304,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def _cb_auto_range_handler(self):
         if self.curr_image is None:
             return
-
+        self.last_action_ = "a"
         if self.parameters.from_zoom:
             arr = self._arr_from_zoom()
         else:
@@ -329,9 +336,14 @@ class Main(QMainWindow, Ui_MainWindow):
                 self.images[img].x_lim = self.curr_image.x_lim
                 self.images[img].y_lim = self.curr_image.y_lim
         if pb == 'range':
-            for img in self.images:
-                self.images[img].vmax = self.curr_image.vmax
-                self.images[img].vmin = self.curr_image.vmin
+            for img in self.images.values():
+                if self.last_action_ == "m":
+                    img.vmax = self.curr_image.vmax
+                    img.vmin = self.curr_image.vmin
+                elif self.last_action_ == "a":
+                    img.vmin, img.vmax = limits(img.array, self.cb_auto_range.currentIndex())
+                else:
+                    pass
         if pb == 'rot':
             for img in self.images:
                 self.images[img].rotation = self.curr_image.rotation
@@ -440,6 +452,7 @@ class Main(QMainWindow, Ui_MainWindow):
                     self.parameters.width = dialog.result["width"]
                     self.parameters.height = dialog.result["height"]
                     self.parameters.dtype = dialog.result["dtype"]
+                    self.parameters.header = dialog.result["header"]
                 else:
                     valid = None
                     break
@@ -537,6 +550,7 @@ class Main(QMainWindow, Ui_MainWindow):
         slider.blockSignals(True)
         slider.setValue(0)
         slider.blockSignals(False)
+        combo.set_current_index_by_im_id(im_id)
         self.show_image(im_id)
 
     def _image_loader_handler(self, event):
@@ -572,18 +586,23 @@ class Main(QMainWindow, Ui_MainWindow):
         self.statusbar.add_progress()
 
     def _remove_handler(self, im_id):
+        if not im_id in self.images.keys():
+            return
         if im_id == self.canvas_main.image.id_:
             self.canvas_main.reset_canvas()
             self.canvas_histogram.reset_canvas()
-        self.images[im_id] = None
+        self.images.pop(im_id)
 
-    def _item_changed(self):
+    def _item_changed(self, *im_id):
         slot = self.sender().objectName().split("_")[-1]
         self.sliders[slot].blockSignals(True)
         maximum = self.combo_boxes[slot].count() - 1 if self.combo_boxes[slot].count() - 1 > 0 else 0
         self.sliders[slot].setMaximum(maximum)
         self.sliders[slot].setValue(0)
         self.sliders[slot].blockSignals(False)
+        if len(im_id) == 1 and im_id[0] > 0:
+            self.combo_boxes[slot].set_current_index_by_im_id(im_id[0])
+            self.show_image(im_id[0])
 
     def _init_image_info_values(self):
         if self.curr_image is None:

@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QComboBox, QApplication
 
 
 class DragNDropComboBox(QComboBox):
-    item_changed = pyqtSignal(name="itemChanged")
+    item_changed = pyqtSignal(int, name="itemChanged")
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -24,6 +24,10 @@ class DragNDropComboBox(QComboBox):
     def get_custom_item(self, index):
         idx = self.model.index(index, 0)
         return self.model.itemFromIndex(idx)
+
+    def set_current_index_by_im_id(self, im_id):
+        row = self._get_item_by_im_id(im_id)
+        self.setCurrentIndex(row)
 
     def get_current_item(self):
         return self.get_custom_item(self.currentIndex())
@@ -79,7 +83,7 @@ class DragNDropComboBox(QComboBox):
         elif event.mimeData().hasText():  # moving between combo boxes
             im_id = int(event.mimeData().text())
             event.source().remove_item(im_id)
-            event.source().item_changed.emit()
+            event.source().item_changed.emit(-im_id)
 
             item = QStandardItem()
             img = self.window().images[im_id]
@@ -89,13 +93,15 @@ class DragNDropComboBox(QComboBox):
             self.model.appendRow(item)
 
             event.acceptProposedAction()
-            self.item_changed.emit()
+            self.item_changed.emit(im_id)
         else:
             event.ignore()
 
     def remove_item(self, im_id):  # TODO use takeRow
+        self.model.removeRow(self._get_item_by_im_id(im_id))
+
+    def _get_item_by_im_id(self, im_id):
         for row in range(self.model.rowCount()):
             item = self.model.item(row, 0)
             if item.data(Qt.UserRole, ) == im_id:
-                self.model.removeRow(row)
-                break
+                return row

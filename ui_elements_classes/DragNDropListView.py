@@ -6,6 +6,7 @@ from utils.global_vars import item_type
 
 class DragNDropListView(QListView):
     itemChanged = pyqtSignal(name="itemChanged")
+    itemDeleted = pyqtSignal(int, name="itemDeleted")
 
     def __init__(self, parent=None):
         super(DragNDropListView, self).__init__(parent)
@@ -72,8 +73,11 @@ class DragNDropListView(QListView):
     def keyPressEvent(self, event):  # for deleting items
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
             selected_indexes = self.selectedIndexes()
-            for index in selected_indexes:
+            for index in reversed(selected_indexes):
+                item = self.model.itemFromIndex(index)
+                im_id = item.data(Qt.UserRole, )
                 self.model.removeRow(index.row())
+                self.itemDeleted.emit(im_id)
             self.itemChanged.emit()
         else:
             super().keyPressEvent(event)

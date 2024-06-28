@@ -5,7 +5,7 @@ import tifffile
 
 
 def id_generator():
-    current_id = 0
+    current_id = 1
     while True:
         yield current_id
         current_id += 1
@@ -15,20 +15,18 @@ def validate_input(filepath, parameters):
     if not os.path.exists(filepath) or not os.path.isfile(filepath):
         return None
     ft = filepath.split(".")[-1]
-    if ft == "bin" or ft == 'pbf':
+    if ft not in ["png", "jpg", "jpeg", 'txt', 'raw', 'tiff', 'tif']:
         size = os.path.getsize(filepath)
         if parameters.width > 0 and parameters.height > 0:
-            dtype = int(parameters.dtype.split("t")[-1]) // 8
-            if size / (parameters.width * parameters.height * dtype) == 1:
+            dtype = np.dtype(parameters.dtype).itemsize
+            if size / (parameters.width * parameters.height * dtype) == 1 or parameters.header > 0:
                 return True
             else:
                 return False
         else:
             return False
-    elif ft in ["png", "jpg", "jpeg", 'txt', 'raw', 'tiff', 'tif']:
-        return True
     else:
-        return None
+        return True
 
 
 def save_jpg(mat, name, path, **kwargs):
