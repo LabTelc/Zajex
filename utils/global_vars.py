@@ -25,7 +25,7 @@ supportedDataTypesByFileType = {
             'float8', 'float16', 'float32', 'float64'],
     "bin": ['int8', 'int16', 'int32', 'int64',
             'uint8', 'uint16', 'uint32', 'uint64',
-            'float8', 'float16', 'float32', 'float64'],
+            'float16', 'float32', 'float64'],
     "jpg": ["uint8"],
     "png": ["uint8"],
     "txt": ['int8', 'int16', 'int32', 'int64',

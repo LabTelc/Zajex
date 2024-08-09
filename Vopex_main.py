@@ -31,7 +31,7 @@ icon_rotate_cw_path = './ui_elements/arrow_rotate_cw.png'
 icon_rotate_ccw_path = './ui_elements/arrow_rotate_ccw.png'
 
 
-class Main(QMainWindow, Ui_MainWindow):
+class Main(QMainWindow, Ui_MainWindow):  # TODO duplicate image
     def __init__(self, args):
         super(Main, self).__init__()
         self.setupUi(self)
@@ -101,7 +101,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.list_views[model].set_custom_model(self.models[model])
 
         self.collapsible_widgets = [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram,
-                                    self.gb_rot_mir, self.gb_a, self.gb_b, self.gb_c, self.gb_d,]
+                                    self.gb_rot_mir, self.gb_a, self.gb_b, self.gb_c, self.gb_d, ]
         self._init_gui_values()
         self.id_gen = id_generator()
         self.console_widget.get_locals()['images'] = self.images
@@ -508,6 +508,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.combo_boxes[group].blockSignals(False)
 
     def _le_operation_handler(self):
+        from scipy.fftpack import fft2, ifft2
         text = self.le_operation.text()
         combo = self.combo_boxes['d']
         slider = self.sliders['d']
@@ -586,7 +587,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.statusbar.add_progress()
 
     def _remove_handler(self, im_id):
-        if not im_id in self.images.keys():
+        if im_id not in self.images.keys():
             return
         if im_id == self.canvas_main.image.id_:
             self.canvas_main.reset_canvas()
@@ -689,7 +690,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _arr_from_zoom(self):
         return self.curr_image.array[self.curr_image.y_lim[1]:self.curr_image.y_lim[0],
-                                     self.curr_image.x_lim[0]:self.curr_image.x_lim[1]]
+               self.curr_image.x_lim[0]:self.curr_image.x_lim[1]]
 
     def resizeEvent(self, event):
         self.gb_fig_settings.setFixedWidth(int(event.size().width() / 6))

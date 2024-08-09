@@ -25,12 +25,13 @@ class ConsoleWidget(QWidget):
         self.capture_output = CaptureOutput(self.text_edit)
         self.interpreter = InteractiveConsole()
         self.interpreter.runsource("import numpy as np")
+        self.interpreter.runsource("from scipy.fft import fft2, ifft2")
         self.text_edit.append("For reference to application use app\nFor reference to image dict use images\n")
 
     def run_code(self):
         code = self.console_input.text()
         self.console_input.clear()
-        self.text_edit.append(">>>" + code + "\n")
+        self.text_edit.append(">>> " + code + "\n")
 
         # Redirect stdout to capture the output
         original_stdout = sys.stdout
