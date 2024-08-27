@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>groupBox</class>
+ <widget class="QGroupBox" name="groupBox">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>235</width>
+    <height>110</height>
+   </rect>
+  </property>
+  <property name="title">
+   <string>Gain and binning</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Capacity [pF]:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="cb_xrd1611_capacity">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>48</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="currentText">
+      <string>0.5</string>
+     </property>
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>0.25</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>0.5</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>8</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>Binning mode:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <item>
+      <widget class="QRadioButton" name="rb_xrd1611_avg">
+       <property name="text">
+        <string>Average</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="rb_xrd1611_accu">
+       <property name="text">
+        <string>Accumulate</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="1">
+    <widget class="QComboBox" name="cb_xrd1611_binning">
+     <item>
+      <property name="text">
+       <string>1x1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2x1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2x2</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4x1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4x4</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

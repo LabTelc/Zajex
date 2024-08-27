@@ -7,3 +7,5 @@
 !.gitignore
 tmp*.py
 data
+detectors
+detectors/*

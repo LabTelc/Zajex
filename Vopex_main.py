@@ -9,17 +9,18 @@ import sys
 from argparse import ArgumentParser
 from queue import Queue
 
-import numpy as np
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog, QAction
 from PyQt5.uic import loadUiType
 
-from ui_elements_classes.BatchDialog import BatchDialog
-from ui_elements_classes.FileInfoDialog import FileInfoDialog
-from ui_elements_classes.LoadImagesDialog import LoadImagesDialog
-from ui_elements_classes.Palletes import *
-from ui_elements_classes.SaveImagesDialog import SaveImagesDialog
-from ui_elements_classes.SettingsDialog import SettingsDialog
+from ui_elements_classes import *
+try:
+    from detectors import DetectorManager
+    detectors_available = True
+except ImportError:
+    DetectorManager = None
+    detectors_available = False
 from utils.ImageLoaderThread import ImageLoaderThread
 from utils.ImageSaverThread import ImageSaverThread
 from utils.global_vars import *
@@ -38,6 +39,15 @@ class Main(QMainWindow, Ui_MainWindow):
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
         self.setWindowIcon(QIcon(icon_path))
         self.parameters = Parameters()
+        self.dm_thread = None
+        if detectors_available:
+            self.a_Detector_Manager = QAction("Detector Manager", self)
+            self.menuTools.addAction(self.a_Detector_Manager)
+            self.a_Detector_Manager.triggered.connect(self._detector_manager)
+            self.dm_queue = Queue()
+            self.dm_thread = DetectorManager(self, self.dm_queue)
+            self.dm_thread.start()
+            self.dm_window = None
         self.action_connection()
 
         if args.shape is not None:
@@ -640,6 +650,10 @@ class Main(QMainWindow, Ui_MainWindow):
             group = dialog.result
             self._load_images(group)
 
+    def _detector_manager(self):
+        self.dm_window = DetectorManagerWidget(self)
+        self.dm_window.show()
+
     def plot_histogram(self, value=None):
         self.parameters.num_bins = self.slider_bins.value()
         if len(self.images) == 0:
@@ -684,6 +698,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.loading_thread.wake()
         self.saving_thread.requestInterruption()
         self.saving_thread.wake()
+        if self.dm_thread:
+            self.dm_thread.requestInterruption()
+            self.dm_thread.wake()
         event.accept()
         app.exit(0)
 
