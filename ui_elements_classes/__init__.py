@@ -1,7 +1,7 @@
 __all__ = ['BatchDialog', 'ClickHoldComboBox', 'CollapsibleGroupBox', 'ConsoleWidget', 'CustomStatusBar',
            'DetectorManagerWidget', 'DragNDropComboBox', 'DragNDropListView', 'FileInfoDialog',
            'HeaderDialog', 'HistoryLineEdit', 'LoadImagesDialog', 'MPLBetterCanvas', 'MPLHistogramCanvas',
-           'DarkPalette', 'LightPalette', 'SaveImagesDialog', 'SettingsDialog', 'VisPyCanvas']
+           'DarkPalette', 'LightPalette', 'SaveImagesDialog', 'SettingsDialog']
 
 from .BatchDialog import BatchDialog
 from .ClickHoldComboBox import ClickHoldComboBox
@@ -20,4 +20,9 @@ from .MPLHistogramCanvas import MPLHistogramCanvas
 from .Palletes import DarkPalette, LightPalette
 from .SaveImagesDialog import SaveImagesDialog
 from .SettingsDialog import SettingsDialog
-from .VisPyCanvas import VisPyCanvas
+try:
+    import vispy
+    from .VisPyCanvas import VisPyCanvas
+    __all__ += ['VisPyCanvas']
+except ImportError:
+    pass

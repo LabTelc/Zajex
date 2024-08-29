@@ -1,86 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- 
-  <widget class="QGroupBox" name="groupBox_2">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>80</y>
-     <width>243</width>
-     <height>103</height>
-    </rect>
-   </property>
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="title">
-    <string>Exposure settings</string>
-   </property>
-   <layout class="QFormLayout" name="formLayout_2">
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
+ <class>groupBox_2</class>
+ <widget class="QGroupBox" name="groupBox_2">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>243</width>
+    <height>105</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="title">
+   <string>Exposure settings</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout_2">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Exposure mode:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="cb_exp_mode">
+     <item>
       <property name="text">
-       <string>Exposure mode:</string>
+       <string>Frames</string>
       </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QComboBox" name="cb_xrd1611_exp_mode">
-      <item>
-       <property name="text">
-        <string>Frames</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Integral</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_3">
+     </item>
+     <item>
       <property name="text">
-       <string>Number of frames in sequence:</string>
+       <string>Integral</string>
       </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QSpinBox" name="sb_xrd1611_nr_frames">
-      <property name="minimum">
-       <number>1</number>
-      </property>
-      <property name="maximum">
-       <number>50000</number>
-      </property>
-      <property name="value">
-       <number>1</number>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>Exposure time [ms]:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QSpinBox" name="sb_xrd1611_exp_time">
-      <property name="maximum">
-       <number>100000</number>
-      </property>
-      <property name="value">
-       <number>1000</number>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Number of frames in sequence:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QSpinBox" name="sb_num_frames">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>50000</number>
+     </property>
+     <property name="value">
+      <number>1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Exposure time [ms]:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QSpinBox" name="sb_exp_time">
+     <property name="maximum">
+      <number>100000</number>
+     </property>
+     <property name="value">
+      <number>1000</number>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
  <resources/>
  <connections/>
 </ui>

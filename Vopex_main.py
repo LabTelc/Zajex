@@ -18,7 +18,8 @@ from ui_elements_classes import *
 try:
     from detectors import DetectorManager
     detectors_available = True
-except ImportError:
+except ImportError as e:
+    print(e)
     DetectorManager = None
     detectors_available = False
 from utils.ImageLoaderThread import ImageLoaderThread
@@ -46,6 +47,8 @@ class Main(QMainWindow, Ui_MainWindow):
             self.a_Detector_Manager.triggered.connect(self._detector_manager)
             self.dm_queue = Queue()
             self.dm_thread = DetectorManager(self, self.dm_queue)
+            self.dm_thread.message_received.connect(lambda x: self.log(x, LogTypes.Log))
+            self.dm_thread.frame_received.connect(self._image_loader_handler)
             self.dm_thread.start()
             self.dm_window = None
         self.action_connection()
@@ -651,7 +654,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self._load_images(group)
 
     def _detector_manager(self):
-        self.dm_window = DetectorManagerWidget(self)
+        self.dm_window = DetectorManagerWidget(None, self.dm_thread, self.dm_queue)
         self.dm_window.show()
 
     def plot_histogram(self, value=None):
