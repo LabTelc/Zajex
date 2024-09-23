@@ -19,7 +19,8 @@ if __name__ == '__main__':
         from detectors import WidePIX
         det = WidePIX()
     else:
-        raise ValueError("Unrecognized detector type")
+        from detectors import Dummy
+        det = Dummy()
 
     det.init_client(address, port)
     det.work()

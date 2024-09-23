@@ -19,7 +19,6 @@ try:
     from detectors import DetectorManager
     detectors_available = True
 except ImportError as e:
-    print(e)
     DetectorManager = None
     detectors_available = False
 from utils.ImageLoaderThread import ImageLoaderThread
@@ -49,6 +48,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.dm_thread = DetectorManager(self, self.dm_queue)
             self.dm_thread.message_received.connect(lambda x: self.log(x, LogTypes.Log))
             self.dm_thread.frame_received.connect(self._image_loader_handler)
+            self.dm_thread.frame_received.connect(self._last_image_handler)
             self.dm_thread.start()
             self.dm_window = None
         self.action_connection()
@@ -577,7 +577,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.log(f"File \"{filepath}\" could not be loaded.", LogTypes.Error)
         self.statusbar.add_progress()
 
-    def _last_image_handler(self):
+    def _last_image_handler(self, *args):
         self.show_image(self.last_image_id)
 
     def _image_saver_handler(self, file):

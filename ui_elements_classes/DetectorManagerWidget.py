@@ -37,14 +37,14 @@ class DetectorManagerWidget(QWidget, UI_DetectorManagerWidget):
         dt.repeat_changed.connect(self.post_command)
         dt.gain_well_changed.connect(self.post_command)
         dt.binning_changed.connect(self.post_command)
-        l = getattr(self, f"l_{name.lower()}")
-        l.setStyleSheet("color: green;")
-        l.setText("Running")
+        l_ = getattr(self, f"l_{name.lower()}")
+        l_.setStyleSheet("color: green;")
+        l_.setText("Running")
 
     def post_command(self, args):
         det, cmd, value = args
-        self.dm_queue.put((det, f"{cmd}%{value}"))
-        self.dm_queue.wake()
+        self.dm_queue.put((det, (cmd, value)))
+        self.dm_thread.wake()
 
 
 class Exposure(QGroupBox, UI_exposure):
@@ -76,7 +76,7 @@ class Acquire(QWidget, UI_acquire):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.pb_acquisition.clicked.connect(lambda :self.start_acquisition.emit(None))
+        self.pb_acquisition.clicked.connect(lambda: self.start_acquisition.emit(None))
         self.cb_repeat.clicked.connect(self.repeat)
 
     def repeat(self):
@@ -162,7 +162,7 @@ class DetectorTab(QWidget):
         elif type_ == "WidePIX":
             self.w_gb = WidePIXBinning(self)
         else:
-            self.w_gb = QWidget(self)
+            self.w_gb = WidePIXBinning(self)
         self.pte_log = QPlainTextEdit(self)
         page_layout = QVBoxLayout()
         w1 = QWidget(self)
