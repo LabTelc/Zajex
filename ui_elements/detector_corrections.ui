@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>groupBox_3</class>
+ <widget class="QGroupBox" name="groupBox_3">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>484</width>
+    <height>203</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="title">
+   <string>Corrections</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_9">
+     <property name="styleSheet">
+      <string notr="true">font: italic 8pt &quot;MS Shell Dlg 2&quot;;</string>
+     </property>
+     <property name="text">
+      <string>Available modes: DF only, BPM only, DF + OB, DF + OB + BPM</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLineEdit" name="le_ob"/>
+   </item>
+   <item row="5" column="2">
+    <widget class="QPushButton" name="pb_file_ob">
+     <property name="text">
+      <string>File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="2">
+    <widget class="QPushButton" name="pb_file_df">
+     <property name="text">
+      <string>File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLineEdit" name="le_df"/>
+   </item>
+   <item row="12" column="0">
+    <widget class="QLineEdit" name="le_bpm"/>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="label_21">
+     <property name="text">
+      <string>BPM image [uint16]:</string>
+     </property>
+     <property name="buddy">
+      <cstring>le_bpm</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_20">
+     <property name="text">
+      <string>DF image [uint16]:</string>
+     </property>
+     <property name="buddy">
+      <cstring>le_df</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>OB image [uint16]:</string>
+     </property>
+     <property name="buddy">
+      <cstring>le_ob</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="2">
+    <widget class="QPushButton" name="pb_file_bpm">
+     <property name="text">
+      <string>File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="1">
+    <widget class="QPushButton" name="pb_img_df">
+     <property name="text">
+      <string>Images</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QPushButton" name="pb_img_ob">
+     <property name="text">
+      <string>Images</string>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="1">
+    <widget class="QPushButton" name="pb_img_bpm">
+     <property name="text">
+      <string>Images</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>From:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
