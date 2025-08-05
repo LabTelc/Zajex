@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Vopex 3.0 (c) Michal Vopalensky, Antonin Zajicek, ITAM CAS 2024</string>
+   <string>Zajex (c) Michal Vopalensky, Antonin Zajicek, ITAM CAS 2024</string>
   </property>
   <widget class="QWidget" name="mainWidget">
    <property name="sizePolicy">
@@ -1161,9 +1161,16 @@
     <addaction name="aSetInputParams"/>
     <addaction name="aSwitchTheme"/>
    </widget>
+   <widget class="QMenu" name="menuTomography">
+    <property name="title">
+     <string>Tomography</string>
+    </property>
+    <addaction name="actionNew_tomography"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
    <addaction name="menuSet_input_parameters"/>
+   <addaction name="menuTomography"/>
   </widget>
   <action name="a_Load_Images">
    <property name="text">
@@ -1199,6 +1206,11 @@
   <action name="aSwitchTheme">
    <property name="text">
     <string>Switch Theme</string>
+   </property>
+  </action>
+  <action name="actionNew_tomography">
+   <property name="text">
+    <string>New tomography</string>
    </property>
   </action>
  </widget>

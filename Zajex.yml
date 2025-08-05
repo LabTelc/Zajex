@@ -1,4 +1,4 @@
-name: Vopex3
+name: Zajex
 channels:
   - conda-forge
   - anaconda
@@ -99,4 +99,4 @@ dependencies:
   - zfp=1.0.0=hd77b12b_0
   - zlib=1.2.13=h8cc25b3_0
   - zstd=1.5.5=hd43e919_0
-prefix: C:\Users\vilif\miniconda3\envs\Vopex3
+prefix: C:\Users\vilif\miniconda3\envs\Zajex

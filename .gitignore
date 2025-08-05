@@ -3,7 +3,7 @@
 !*.py
 !*.ui
 !icon_64x.png
-!Vopex3.yml
+!Zajex.yml
 !.gitignore
 tmp*.py
 data
