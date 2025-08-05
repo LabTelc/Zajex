@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64.405579mm"
+   height="64.578934mm"
+   viewBox="0 0 64.405579 64.578934"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <circle
+     style="fill:#ffd42a;stroke-width:0.250486"
+     id="circle14"
+     cx="32.338573"
+     cy="41.873093"
+     r="22.705837" />
+  <circle
+     style="fill:#d38d5f;stroke-width:0.250486"
+     id="circle13"
+     cx="41.676479"
+     cy="32.240318"
+     r="22.705837" />
+  <circle
+     style="fill:#ff2a2a;stroke-width:0.250486"
+     id="circle12"
+     cx="22.804098"
+     cy="32.338608"
+     r="22.705837" />
+  <circle
+     style="fill:#ff6600;stroke-width:0.250486"
+     id="path11"
+     cx="32.240284"
+     cy="22.705835"
+     r="22.705837" />
+  <g
+     id="layer1"
+     transform="translate(-32.436938,-62.219884)">
+    <rect
+       style="fill:#225500;stroke-width:0.172071"
+       id="rect7"
+       width="45.541626"
+       height="45.541626"
+       x="-43.893078"
+       y="89.765839"
+       transform="rotate(-45)" />
+    <rect
+       style="fill:#338000;stroke-width:0.172071"
+       id="rect6"
+       width="45.541626"
+       height="45.541626"
+       x="41.868919"
+       y="71.740311" />
+    <rect
+       style="fill:#44aa00;stroke-width:0.12165"
+       id="rect8"
+       width="32.196835"
+       height="32.196835"
+       x="-37.220684"
+       y="96.438232"
+       transform="rotate(-45)" />
+    <rect
+       style="fill:#55d400;stroke-width:0.0873952"
+       id="rect9"
+       width="23.130671"
+       height="23.130671"
+       x="53.074398"
+       y="82.945786" />
+    <rect
+       style="fill:#66ff00;stroke-width:0.06125"
+       id="rect10"
+       width="16.21089"
+       height="16.21089"
+       x="-29.227709"
+       y="104.43121"
+       transform="rotate(-45)" />
+    <rect
+       style="fill:#99ff55;stroke-width:0.0443145"
+       id="rect11"
+       width="11.728605"
+       height="11.728605"
+       x="58.775429"
+       y="88.64682" />
+  </g>
+  <rect
+     style="fill:#00ccff;stroke-width:0.233853"
+     id="rect14"
+     width="45.534538"
+     height="8.2566671"
+     x="9.436162"
+     y="44.527046" />
+  <rect
+     style="fill:#00ccff;stroke-width:0.233884"
+     id="rect15"
+     width="45.546825"
+     height="8.2566671"
+     x="9.4238749"
+     y="11.79526" />
+  <rect
+     style="fill:#00ccff;stroke-width:0.264583"
+     id="rect16"
+     width="0.41774806"
+     height="0.049146827"
+     x="9.4730234"
+     y="48.630791" />
+</svg>

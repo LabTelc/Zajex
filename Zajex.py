@@ -11,19 +11,16 @@ from queue import Queue
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog, QAction
+from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
 from ui_elements_classes import *
-from utils.ImageLoaderThread import ImageLoaderThread
-from utils.ImageSaverThread import ImageSaverThread
-from utils.global_vars import *
-from utils.utils import *
+from utils import *
 
-Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/MainWindow.ui')
-icon_path = './ui_elements/icon_64x.png'
-icon_rotate_cw_path = './ui_elements/arrow_rotate_cw.png'
-icon_rotate_ccw_path = './ui_elements/arrow_rotate_ccw.png'
+Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/QtUI/MainWindow.ui')
+icon_path = './ui_elements/icons/Zajex.svg'
+icon_rotate_cw_path = './ui_elements/icons/arrow_rotate_cw.png'
+icon_rotate_ccw_path = './ui_elements/icons/arrow_rotate_ccw.png'
 
 
 class Main(QMainWindow, Ui_MainWindow):

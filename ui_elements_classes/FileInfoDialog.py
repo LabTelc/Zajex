@@ -1,7 +1,7 @@
 from PyQt5.uic import loadUiType
 from utils.global_vars import *
 
-Ui_FileInfoDialog, QDialog = loadUiType('./ui_elements/FileInfoDialog.ui')
+Ui_FileInfoDialog, QDialog = loadUiType('./ui_elements/QtUI/FileInfoDialog.ui')
 
 
 class FileInfoDialog(QDialog, Ui_FileInfoDialog):

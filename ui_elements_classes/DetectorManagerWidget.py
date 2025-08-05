@@ -2,12 +2,12 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QPlainTextEdit
 from PyQt5.uic import loadUiType
 
-UI_DetectorManagerWidget, QWidget = loadUiType('./ui_elements/DetectorManagerWidget.ui')
-UI_exposure, QGroupBox = loadUiType('./ui_elements/exposure.ui')
-UI_xrd_gain_binning, _ = loadUiType('./ui_elements/xrd_gain_binning.ui')
-UI_dexela_well_binning, _ = loadUiType('./ui_elements/dexela_well_binning.ui')
-UI_acquire, _ = loadUiType('./ui_elements/acquire.ui')
-UI_detector_corrections, _ = loadUiType('./ui_elements/detector_corrections.ui')
+UI_DetectorManagerWidget, QWidget = loadUiType('./ui_elements/QtUI/DetectorManagerWidget.ui')
+UI_exposure, QGroupBox = loadUiType('./ui_elements/QtUI/exposure.ui')
+UI_xrd_gain_binning, _ = loadUiType('./ui_elements/QtUI/xrd_gain_binning.ui')
+UI_dexela_well_binning, _ = loadUiType('./ui_elements/QtUI/dexela_well_binning.ui')
+UI_acquire, _ = loadUiType('./ui_elements/QtUI/acquire.ui')
+UI_detector_corrections, _ = loadUiType('./ui_elements/QtUI/detector_corrections.ui')
 
 
 class DetectorManagerWidget(QWidget, UI_DetectorManagerWidget):

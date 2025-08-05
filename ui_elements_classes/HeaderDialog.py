@@ -3,7 +3,7 @@ from PyQt5.uic import loadUiType
 
 from utils import EZRT
 
-Ui_HeaderDialog, QWidget = loadUiType('./ui_elements/MainWindow.ui')
+Ui_HeaderDialog, QWidget = loadUiType('./ui_elements/QtUI/MainWindow.ui')
 
 
 class HeaderDialog(QWidget, Ui_HeaderDialog):

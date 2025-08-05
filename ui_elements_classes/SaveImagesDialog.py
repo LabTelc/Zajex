@@ -7,7 +7,7 @@ from PyQt5.uic import loadUiType
 
 from utils.global_vars import *
 
-Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/SaveImagesDialog.ui')
+Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/QtUI/SaveImagesDialog.ui')
 
 
 class SaveImagesDialog(QDialog, Ui_SettingsDialog):

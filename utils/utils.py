@@ -121,3 +121,13 @@ def limits(arr: np.array, index: int) -> tuple:
     else:
         raise ValueError("Index out of range")
     return vmin, vmax
+
+
+def get_config():
+    try:
+        import configparser
+    except ImportError:
+        import ConfigParser as configparser  # Python 2 fallback
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    return config

@@ -3,7 +3,7 @@ from PyQt5.uic import loadUiType
 
 from utils.global_vars import *
 
-Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/BatchDialog.ui')
+Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/QtUI/BatchDialog.ui')
 
 
 class BatchDialog(QDialog, Ui_SettingsDialog):

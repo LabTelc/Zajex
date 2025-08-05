@@ -2,7 +2,7 @@ from PyQt5.uic import loadUiType
 import numpy as np  # for evaluation of ratio
 from utils.global_vars import *
 
-Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/SettingsDialog.ui')
+Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/QtUI/SettingsDialog.ui')
 
 
 class SettingsDialog(QDialog, Ui_SettingsDialog):

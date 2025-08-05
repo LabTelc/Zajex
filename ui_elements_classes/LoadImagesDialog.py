@@ -1,6 +1,6 @@
 from PyQt5.uic import loadUiType
 
-Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/LoadImagesDialog.ui')
+Ui_SettingsDialog, QDialog = loadUiType('./ui_elements/QtUI/LoadImagesDialog.ui')
 
 
 class LoadImagesDialog(QDialog, Ui_SettingsDialog):
