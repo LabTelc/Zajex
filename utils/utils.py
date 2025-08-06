@@ -3,6 +3,9 @@ from PIL import Image
 import numpy as np
 import tifffile
 
+from PyQt5.QtGui import QStandardItem
+from PyQt5.QtCore import Qt
+
 
 def id_generator():
     current_id = 1
@@ -131,3 +134,11 @@ def get_config():
     config = configparser.ConfigParser()
     config.read('config.ini')
     return config
+
+
+def create_item(im, im_id):
+    item = QStandardItem()
+    item.setToolTip(im.filepath)
+    item.setText(im.filepath.split("/")[-1])
+    item.setData(im_id, Qt.UserRole)
+    return item

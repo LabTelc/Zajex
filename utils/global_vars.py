@@ -60,8 +60,6 @@ lFileTypeString = """
             """
 rotation_list = ["0°", "90°", "180°", "270°"]
 
-item_type = "application/x-qabstractitemmodeldatalist"
-
 
 @dataclass
 class LogTypes:
@@ -76,16 +74,12 @@ class Parameters:
     header: int = 0
     width: int = 0
     height: int = 0
-    rotate: int = 0
-    mirror_UD: bool = False
-    mirror_LR: bool = False
     cmap: str = 'gray'
     from_zoom: bool = False
     last_dir: str = "./"
     show_axes: bool = False
     num_bins: int = 30
     ratio: float = 1 / np.e
-    tiff_bit_depth: str = str(np.uint16)
 
 
 @dataclass
@@ -96,6 +90,7 @@ class ImageObject:
     x_lim: tuple
     y_lim: tuple
     id_: int
+    slot: str
     filepath: str
     mirror_UD: bool = False
     mirror_LR: bool = False

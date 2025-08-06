@@ -1,24 +1,19 @@
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QMimeData
 from PyQt5.QtWidgets import QListView
+from PyQt5.QtGui import QDrag
 
-from utils.global_vars import item_type
+from utils import create_item
 
 
 class DragNDropListView(QListView):
-    itemChanged = pyqtSignal(name="itemChanged")
-    itemDeleted = pyqtSignal(int, name="itemDeleted")
+    remove_items = pyqtSignal(list, name="removeItems")
+    delete_items = pyqtSignal(list, name="deleteItems")
 
     def __init__(self, parent=None):
-        super(DragNDropListView, self).__init__(parent)
+        super().__init__(parent)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
-        self.model = None
         self.moving_method = None
-
-    def set_custom_model(self, custom_model):
-        self.model = custom_model
-        self.setModel(custom_model)
-        self.moving_method = self.model.takeRow
 
     def set_move_mode(self, mode="copy"):
         """
@@ -28,23 +23,34 @@ class DragNDropListView(QListView):
         if mode == "copy":
             self.moving_method = self.copy_method
         elif mode == "move":
-            self.moving_method = self.model.takeRow
+            self.moving_method = self.model().takeRow
 
     def copy_method(self, row):
-        item = self.model.item(row)
+        item = self.model().item(row)
         return item.clone()
 
     def dragEnterEvent(self, event, **kwargs):
-        if event.mimeData().hasUrls() or event.mimeData().hasFormat(item_type):
+        if event.mimeData().hasText():
             event.accept()
         else:
             event.ignore()
 
     def dragMoveEvent(self, event, **kwargs):
-        if event.mimeData().hasUrls() or event.mimeData().hasFormat(item_type):
+        if event.mimeData().hasText():
             event.accept()
         else:
             event.ignore()
+
+    def startDrag(self, supported_actions, qt_drop_actions=None, qt_drop_action=None):
+        selected = self.selectedIndexes()
+        selected = [self.model().itemFromIndex(index).data(Qt.UserRole, ) for index in selected]
+
+        mime_data = QMimeData()
+        mime_data.setText(",".join(str(im_id) for im_id in selected)) # using text to transfer IDs
+
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+        drag.exec_(supported_actions)
 
     def dropEvent(self, event, **kwargs):
         if event.mimeData().hasUrls():  # loading new files
@@ -53,39 +59,28 @@ class DragNDropListView(QListView):
             self.window().open_files(file_paths, self.objectName().split("_")[-1])
             event.accept()
 
-        elif event.mimeData().hasFormat(item_type):  # moving between list views
-            selected_indexes = event.source().selectedIndexes()
-            for index in reversed(selected_indexes):  # to avoid index shifting
-                item = event.source().moving_method(index.row())
-                if item is not None:
-                    self.model.insertRow(0, item)
+        elif event.mimeData().hasText():  # moving
+            selected_ids = [int(im_id) for im_id in event.mimeData().text().split(",")]
+            self.remove_items.emit(selected_ids)
+            slot = self.objectName().split("_")[-1]
+            for im_id in selected_ids:
+                im = self.window().images[im_id]
+                im.slot = slot
+                item = create_item(im, im_id)
+                self.model().insertRow(0, item)
 
-            event.source().itemChanged.emit()
-            self.itemChanged.emit()
             event.accept()
-
         else:
             event.ignore()
 
     def get_custom_item(self, index):
-        return self.model.itemFromIndex(index)
+        return self.model().itemFromIndex(index)
 
     def keyPressEvent(self, event):  # for deleting items
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            selected_indexes = self.selectedIndexes()
-            for index in reversed(selected_indexes):
-                item = self.model.itemFromIndex(index)
-                im_id = item.data(Qt.UserRole, )
-                self.model.removeRow(index.row())
-                self.itemDeleted.emit(im_id)
-            self.itemChanged.emit()
+            selected = self.selectedIndexes()
+            selected_ids = [self.model().itemFromIndex(index).data(Qt.UserRole, ) for index in selected]
+            self.remove_items.emit(selected_ids)
+            self.delete_items.emit(selected_ids)
         else:
             super().keyPressEvent(event)
-
-    def remove_item(self, im_id):  # TODO use takeRow
-        for row in range(self.model.rowCount()):
-            item = self.model.item(row, 0)
-            if item.data(Qt.UserRole, ) == im_id:
-                self.model.removeRow(row)
-                self.window().images[im_id] = None
-                break

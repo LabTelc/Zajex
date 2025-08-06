@@ -11,10 +11,10 @@ class CollapsibleGroupBox(QGroupBox):
                             height: 10px;
                         }
                         QGroupBox::indicator:checked {
-                            image: url(./ui_elements/arrow_down.png);
+                            image: url(./ui_elements/icons/arrow_down.png);
                         }
                         QGroupBox::indicator:unchecked {
-                            image: url(./ui_elements/arrow_right.png);
+                            image: url(./ui_elements/icons/arrow_right.png);
                         }
                     """)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

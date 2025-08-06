@@ -9,18 +9,15 @@ import sys
 from argparse import ArgumentParser
 from queue import Queue
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
+from PyQt5.QtGui import QIcon, QStandardItemModel
 from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
 from ui_elements_classes import *
+from ui_elements import icon_app, icon_rotate_cw, icon_rotate_ccw, icon_load, icon_save
 from utils import *
 
 Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/QtUI/MainWindow.ui')
-icon_path = './ui_elements/icons/Zajex.svg'
-icon_rotate_cw_path = './ui_elements/icons/arrow_rotate_cw.png'
-icon_rotate_ccw_path = './ui_elements/icons/arrow_rotate_ccw.png'
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -28,7 +25,7 @@ class Main(QMainWindow, Ui_MainWindow):
         super(Main, self).__init__()
         self.setupUi(self)
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
-        self.setWindowIcon(QIcon(icon_path))
+        self.setWindowIcon(QIcon(icon_app))
         self.parameters = Parameters()
         self.dm_thread = None
         self.action_connection()
@@ -55,26 +52,28 @@ class Main(QMainWindow, Ui_MainWindow):
         for signal in input_handling_functions.keys():
             signal.connect(input_handling_functions[signal])
 
-        self.combo_boxes = {
-            "a": self.cb_images_a,
-            "b": self.cb_images_b,
-            "c": self.cb_images_c,
-            "d": self.cb_images_d,
-        }
-        self.list_views = {
-            "a": self.lw_a,
-            "b": self.lw_b,
-            "c": self.lw_c,
-            "d": self.lw_d,
-        }
-        self.sliders = {
-            "a": self.slider_a,
-            "b": self.slider_b,
-            "c": self.slider_c,
-            "d": self.slider_d,
-            "lower": self.slider_lower,
-            "upper": self.slider_upper
-        }
+        self.models = {key: QStandardItemModel() for key in ['a', 'b', 'c', 'd']}
+        self.list_views = {key: getattr(self, f"lw_{key}") for key in ['a', 'b', 'c', 'd']}
+        self.combo_boxes = {key: getattr(self, f"cb_images_{key}") for key in ['a', 'b', 'c', 'd']}
+        for key in ['a', 'b', 'c', 'd']:
+            getattr(self, f"cb_images_{key}").setView(DragNDropListView())
+            getattr(self, f"cb_images_{key}").activated.connect(self._cb_images_handler)
+            getattr(self, f"cb_images_{key}").remove_items.connect(self.remove_items_from_model)
+            getattr(self, f"tb_load_{key}").clicked.connect(self._pb_load_handler)
+            getattr(self, f"tb_load_{key}").setIcon(QIcon(icon_load))
+            getattr(self, f"cb_save_{key}").save_signal.connect(self._cb_save_handler)
+            getattr(self, f"slider_{key}").valueChanged.connect(self._slider_handler)
+            getattr(self, f"lw_{key}").doubleClicked.connect(self._lw_handler)
+            getattr(self, f"lw_{key}").remove_items.connect(self.remove_items_from_model)
+            getattr(self, f"lw_{key}").delete_items.connect(self.delete_items)
+
+            self.list_views[key].setModel(self.models[key])
+            self.combo_boxes[key].setModel(self.models[key])
+            getattr(self, f"lw_{key}").set_move_mode("move")
+
+        self.sliders = {key: getattr(self, f"slider_{key}") for key in ['a', 'b', 'c', 'd']}
+        self.sliders["lower"] = self.slider_lower
+        self.sliders["upper"] = self.slider_upper
         self.spin_boxes = {
             "lower": self.dsb_lower,
             "upper": self.dsb_upper,
@@ -83,16 +82,6 @@ class Main(QMainWindow, Ui_MainWindow):
             "columns_from": self.sb_columns_from,
             "columns_to": self.sb_columns_to,
         }
-        self.models = {
-            "a": QStandardItemModel(),
-            "b": QStandardItemModel(),
-            "c": QStandardItemModel(),
-            "d": QStandardItemModel()
-        }
-        for model in self.models.keys():
-            self.combo_boxes[model].set_custom_model(self.models[model])
-            self.list_views[model].set_custom_model(self.models[model])
-
         self.collapsible_widgets = [self.gb_intensity, self.gb_zoom, self.gb_parameters, self.gb_histogram,
                                     self.gb_rot_mir, self.gb_a, self.gb_b, self.gb_c, self.gb_d, ]
         self._init_gui_values()
@@ -105,10 +94,8 @@ class Main(QMainWindow, Ui_MainWindow):
             self.cb_colormaps.addItem(cmap)
 
         for f in supportedSaveFormats:
-            self.cb_save_a.addItem(f"Save all in A [{f}]")
-            self.cb_save_b.addItem(f"Save all in B [{f}]")
-            self.cb_save_c.addItem(f"Save all in C [{f}]")
-            self.cb_save_d.addItem(f"Save all calculated [{f}]")
+            for key in ['a', 'b', 'c', 'd']:
+                getattr(self, f"cb_save_{key}").addItem(QIcon(icon_save), f"[{f}]")
             self.cb_save_current.addItem(f"Save current image [{f}]")
 
         for r in limits_dict.values():
@@ -117,8 +104,8 @@ class Main(QMainWindow, Ui_MainWindow):
         for i in rotation_list:
             self.cb_rotation.addItem(i)
 
-        self.pb_rotate_cw.setIcon(QIcon(icon_rotate_cw_path))
-        self.pb_rotate_ccw.setIcon(QIcon(icon_rotate_ccw_path))
+        self.pb_rotate_cw.setIcon(QIcon(icon_rotate_cw))
+        self.pb_rotate_ccw.setIcon(QIcon(icon_rotate_ccw))
 
         for s in self.sliders:
             if s not in ['upper', "lower"]:
@@ -155,32 +142,6 @@ class Main(QMainWindow, Ui_MainWindow):
             # - Save Current
             self.cb_save_current.save_signal: self._cb_save_handler,
 
-            # Assets
-            # - A
-            self.cb_images_a.activated: self._cb_images_handler,
-            self.cb_images_a.item_changed: self._item_changed,
-            self.pb_load_a.clicked: self._pb_load_handler,
-            self.cb_save_a.save_signal: self._cb_save_handler,
-            self.slider_a.valueChanged: self._slider_handler,
-            # - B
-            self.cb_images_b.activated: self._cb_images_handler,
-            self.cb_images_b.item_changed: self._item_changed,
-            self.pb_load_b.clicked: self._pb_load_handler,
-            self.cb_save_b.save_signal: self._cb_save_handler,
-            self.slider_b.valueChanged: self._slider_handler,
-            # - C
-            self.cb_images_c.activated: self._cb_images_handler,
-            self.cb_images_c.item_changed: self._item_changed,
-            self.pb_load_c.clicked: self._pb_load_handler,
-            self.cb_save_c.save_signal: self._cb_save_handler,
-            self.slider_c.valueChanged: self._slider_handler,
-            # - Operation
-            self.cb_images_d.activated: self._cb_images_handler,
-            self.cb_images_d.item_changed: self._item_changed,
-            self.le_operation.returnPressed: self._le_operation_handler,
-            self.cb_save_d.save_signal: self._cb_save_handler,
-            self.slider_d.valueChanged: self._slider_handler,
-
             # Other
             self.loading_thread.image_loaded: self._image_loader_handler,
             self.loading_thread.last_image: self._last_image_handler,
@@ -188,21 +149,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.saving_thread.delete_signal: self._remove_handler,
             self.canvas_main.selection_changed: self._selection_changed,
             self.canvas_main.pixel_selected: self.plot_histogram,
-
-            # List Views
-            self.lw_a.doubleClicked: self._lw_handler,
-            self.lw_b.doubleClicked: self._lw_handler,
-            self.lw_c.doubleClicked: self._lw_handler,
-            self.lw_d.doubleClicked: self._lw_handler,
-
-            self.lw_a.itemChanged: self._item_changed,
-            self.lw_a.itemDeleted: self._remove_handler,
-            self.lw_b.itemChanged: self._item_changed,
-            self.lw_b.itemDeleted: self._remove_handler,
-            self.lw_c.itemChanged: self._item_changed,
-            self.lw_c.itemDeleted: self._remove_handler,
-            self.lw_d.itemChanged: self._item_changed,
-            self.lw_d.itemDeleted: self._remove_handler,
+            self.le_operation.return_pressed: self._le_operation_handler,
         }
 
     def action_connection(self):
@@ -241,6 +188,29 @@ class Main(QMainWindow, Ui_MainWindow):
         elif self.palette == 'light':
             self.palette = 'dark'
             app.setPalette(self.palettes['dark'], None)
+
+    def remove_items_from_model(self, im_ids):
+        """
+        Move image with im_id to slot
+        :param im_ids: list of ids of image to move
+        """
+        old_slot = self.images[im_ids[0]].slot
+        model = self.models[old_slot]
+
+        for im_id in im_ids:
+            for row in range(model.rowCount()):
+                item = model.item(row, 0)
+                if item.data(Qt.UserRole, ) == im_id:
+                    model.removeRow(row)
+                    break
+
+        self.sliders[old_slot].blockSignals(True)
+        self.sliders[old_slot].setMaximum(model.rowCount() - 1)
+        self.sliders[old_slot].blockSignals(False)
+
+    def delete_items(self, im_ids):
+        for im_id in im_ids:
+            self.images.pop(im_id)
 
     def _cb_colormaps_handler(self):
         self.parameters.cmap = self.cb_colormaps.currentText()
@@ -402,7 +372,7 @@ class Main(QMainWindow, Ui_MainWindow):
         group = self.sender().objectName().split('_')[-1]
         self.sliders[group].blockSignals(True)
         self.sliders[group].setValue(event)
-        im_id = self.combo_boxes[group].get_custom_item(event).data(Qt.UserRole, )
+        im_id = self.combo_boxes[group].itemData(event, Qt.UserRole)
         self.show_image(im_id)
         self.sliders[group].blockSignals(False)
 
@@ -430,8 +400,8 @@ class Main(QMainWindow, Ui_MainWindow):
             for model in ["a", "b", "c", "d"]:
                 model_new = models[model]
                 self.models[model] = model_new
-                self.list_views[model].set_custom_model(model_new)
-                self.combo_boxes[model].set_custom_model(model_new)
+                self.list_views[model].setModel(model_new)
+                self.combo_boxes[model].setModel(model_new)
 
     def open_files(self, filepaths: list, group: str):
         for filepath in filepaths:
@@ -509,15 +479,19 @@ class Main(QMainWindow, Ui_MainWindow):
 
         if self.combo_boxes['a'].count() > 0:
             im_a = self.images[self.combo_boxes['a'].get_current_item().data(Qt.UserRole, )]
-            a = im_a.array
+            A = a = im_a.array
             fp_a = im_a.filepath
         if self.combo_boxes['b'].count() > 0:
             im_b = self.images[self.combo_boxes['b'].get_current_item().data(Qt.UserRole, )]
-            b = im_b.array
+            B = b = im_b.array
             fp_b = im_b.filepath
         if self.combo_boxes['c'].count() > 0:
             im_c = self.images[self.combo_boxes['c'].get_current_item().data(Qt.UserRole, )]
-            c = im_c.array
+            C = c = im_c.array
+            fp_c = im_c.filepath
+        if self.combo_boxes['d'].count() > 0:
+            im_c = self.images[self.combo_boxes['c'].get_current_item().data(Qt.UserRole, )]
+            C = c = im_c.array
             fp_c = im_c.filepath
 
         try:
@@ -528,23 +502,19 @@ class Main(QMainWindow, Ui_MainWindow):
 
         tooltip = text.replace("a", "\t").replace("b", '\n').replace("c", '\r')
         tooltip = tooltip.replace("\t", f"[{fp_a.split('/')[-1]}]").replace("\n", f"[{fp_b.split('/')[-1]}]")
-        tooltip = tooltip.replace("\r", f"[{fp_c.split('/')[-1]}]")
+        tooltip = tooltip.replace("\r", f"[{fp_c.split('/')[-1]}]") + "/" + text
 
-        item = QStandardItem()
-        item.setText(text)
-        item.setToolTip(tooltip)
         im_id = next(self.id_gen)
-        item.setData(im_id, Qt.UserRole)
-        combo.add_item(item)
-
         self.images[im_id] = ImageObject(image, image.min(), image.max(), (0, image.shape[1]),
-                                         (image.shape[0], 0), im_id, tooltip)
+                                         (image.shape[0], 0), im_id, "d", tooltip)
+        item = create_item(self.images[im_id], im_id)
+        self.models["d"].insertRow(0, item)
 
         slider.setMaximum(combo.count() - 1)
         slider.blockSignals(True)
         slider.setValue(0)
         slider.blockSignals(False)
-        combo.set_current_index_by_im_id(im_id)
+        combo.setCurrentIndex(0)
         self.show_image(im_id)
 
     def _image_loader_handler(self, event):
@@ -553,15 +523,12 @@ class Main(QMainWindow, Ui_MainWindow):
             self.sliders[slot].blockSignals(True)
             self.combo_boxes[slot].blockSignals(True)
             im_id = next(self.id_gen)
-            img = ImageObject(arr, arr.min(), arr.max(), (0, arr.shape[1]), (arr.shape[0], 0), im_id, filepath)
+            img = ImageObject(arr, arr.min(), arr.max(), (0, arr.shape[1]), (arr.shape[0], 0), im_id, slot, filepath)
             self.images[im_id] = img
             self.last_image_id = im_id
 
-            item = QStandardItem()
-            item.setText(filepath.split("/")[-1])
-            item.setToolTip(filepath)
-            item.setData(im_id, Qt.UserRole)
-            self.models[slot].appendRow(item)
+            item = create_item(img, im_id)
+            self.models[slot].insertRow(0, item)
 
             self.log(f"File \"{filepath}\" loaded with ID: {im_id} in slot: {slot.upper()}.", LogTypes.Log)
             self.sliders[slot].setMaximum(self.combo_boxes[slot].count() - 1)
@@ -586,17 +553,6 @@ class Main(QMainWindow, Ui_MainWindow):
             self.canvas_main.reset_canvas()
             self.canvas_histogram.reset_canvas()
         self.images.pop(im_id)
-
-    def _item_changed(self, *im_id):
-        slot = self.sender().objectName().split("_")[-1]
-        self.sliders[slot].blockSignals(True)
-        maximum = self.combo_boxes[slot].count() - 1 if self.combo_boxes[slot].count() - 1 > 0 else 0
-        self.sliders[slot].setMaximum(maximum)
-        self.sliders[slot].setValue(0)
-        self.sliders[slot].blockSignals(False)
-        if len(im_id) == 1 and im_id[0] > 0:
-            self.combo_boxes[slot].set_current_index_by_im_id(im_id[0])
-            self.show_image(im_id[0])
 
     def _init_image_info_values(self):
         if self.curr_image is None:
@@ -687,7 +643,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _arr_from_zoom(self):
         return self.curr_image.array[self.curr_image.y_lim[1]:self.curr_image.y_lim[0],
-               self.curr_image.x_lim[0]:self.curr_image.x_lim[1]]
+        self.curr_image.x_lim[0]:self.curr_image.x_lim[1]]
 
     def resizeEvent(self, event):
         self.gb_fig_settings.setFixedWidth(int(event.size().width() / 6))

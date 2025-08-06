@@ -20,15 +20,10 @@ class SaveImagesDialog(QDialog, Ui_SettingsDialog):
         self.saving_queue = saving_queue
 
         self.model = QStandardItemModel()
-        self.lw_a.set_custom_model(self.clone_model(models["a"]))
-        self.lw_a.setAcceptDrops(False)
-        self.lw_b.set_custom_model(self.clone_model(models["b"]))
-        self.lw_b.setAcceptDrops(False)
-        self.lw_c.set_custom_model(self.clone_model(models["c"]))
-        self.lw_c.setAcceptDrops(False)
-        self.lw_d.set_custom_model(self.clone_model(models["d"]))
-        self.lw_d.setAcceptDrops(False)
-        self.lw_s.set_custom_model(self.model)
+        for key in ["a", "b", "c", "d"]:
+            getattr(self, f"lw_{key}").setModel(self.clone_model(models["a"]))
+            getattr(self, f"lw_{key}").setAcceptDrops(False)
+        self.lw_s.setModel(self.model)
         self.models = {
             "a": self.lw_a,
             "b": self.lw_b,

@@ -23,8 +23,7 @@ except Exception as e:
 def init_detector():
     ret, number = enum_sensors()
     if ret != 0:
-
-        return None
+        pass
 
     
 class Detector():
