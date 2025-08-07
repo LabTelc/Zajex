@@ -132,7 +132,7 @@ def get_config():
     except ImportError:
         import ConfigParser as configparser  # Python 2 fallback
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('utils/config.ini')
     return config
 
 

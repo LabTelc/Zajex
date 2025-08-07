@@ -13,6 +13,7 @@ from PyQt5.QtGui import QIcon, QStandardItemModel
 from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
+from detectors import DetectorManagerThread
 from ui_elements_classes import *
 from ui_elements import icon_app, icon_rotate_cw, icon_rotate_ccw, icon_load, icon_save
 from utils import *
@@ -27,7 +28,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self.palettes = {'dark': DarkPalette(), 'light': LightPalette()}
         self.setWindowIcon(QIcon(icon_app))
         self.parameters = Parameters()
-        self.dm_thread = None
         self.action_connection()
 
         if args.shape is not None:
@@ -47,6 +47,13 @@ class Main(QMainWindow, Ui_MainWindow):
         self.saving_queue = Queue()
         self.saving_thread = ImageSaverThread(self, image_queue=self.saving_queue, images=self.images)
         self.saving_thread.start()
+
+        self.dm_window = None
+        self.dm_queue = Queue()
+        self.dm_thread = DetectorManagerThread(self)
+        self.dm_thread.new_message.connect(lambda _args: self.log(*_args))
+        self.dm_thread.new_image.connect(lambda _args: self._image_loader_handler(*_args))
+        self.dm_thread.new_image.connect(self._last_image_handler)
 
         input_handling_functions = self._input_handling_functions()
         for signal in input_handling_functions.keys():
@@ -143,7 +150,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.cb_save_current.save_signal: self._cb_save_handler,
 
             # Other
-            self.loading_thread.image_loaded: self._image_loader_handler,
+            self.loading_thread.image_loaded: lambda _args: self._image_loader_handler(*_args),
             self.loading_thread.last_image: self._last_image_handler,
             self.saving_thread.image_saved: self._image_saver_handler,
             self.saving_thread.delete_signal: self._remove_handler,
@@ -159,6 +166,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.a_Batch_Processing.triggered.connect(self._batch_processing)
         self.a_Load_Images.triggered.connect(self._a_load_images_handler)
         self.a_Save_Image.triggered.connect(self._a_save_image_handler)
+        self.a_Tomography.triggered.connect(self._tomography_handler)
 
     def _set_input_parameters(self):
         dialog = FileInfoDialog(self, self.parameters, ftype="bin")
@@ -517,8 +525,7 @@ class Main(QMainWindow, Ui_MainWindow):
         combo.setCurrentIndex(0)
         self.show_image(im_id)
 
-    def _image_loader_handler(self, event):
-        arr, filepath, slot = event
+    def _image_loader_handler(self, arr, filepath, slot):
         if arr is not None:
             self.sliders[slot].blockSignals(True)
             self.combo_boxes[slot].blockSignals(True)
@@ -609,8 +616,10 @@ class Main(QMainWindow, Ui_MainWindow):
             group = dialog.result
             self._load_images(group)
 
-    def _detector_manager(self):
+    def _tomography_handler(self):
+        self.dm_thread.start()
         self.dm_window = DetectorManagerWidget(None, self.dm_thread, self.dm_queue)
+        self.dm_thread.detector_initialized.connect(self.dm_window.detector_initialized)
         self.dm_window.show()
 
     def plot_histogram(self, value=None):
@@ -633,6 +642,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self._init_image_info_values()
 
     def log(self, text, log_type=LogTypes.Log):
+        print(text)
         if log_type == LogTypes.Log:
             text = f"<font color='green'>{text}</font>"
         elif log_type == LogTypes.Warning:
@@ -657,9 +667,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.loading_thread.wake()
         self.saving_thread.requestInterruption()
         self.saving_thread.wake()
-        if self.dm_thread:
+        if self.dm_thread.isRunning():
             self.dm_thread.requestInterruption()
-            self.dm_thread.wake()
         event.accept()
         app.exit(0)
 

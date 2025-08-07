@@ -8,9 +8,10 @@ if __name__ == '__main__':
 
     if name == "Dexela":
         from detectors import Dexela
+
         det = Dexela()
     elif name == "XRD1611":
-        from detectors import XRD1611
+
         det = XRD1611()
     elif name == "XRD1622":
         from detectors import XRD1622

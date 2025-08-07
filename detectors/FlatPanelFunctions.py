@@ -11,9 +11,9 @@ import sys
 if sys.version[0] != '2':
     raise SystemError("Python 3 is not supported.")
 
-from .FlatPanelCommon import *
-from .FlatPanelStructures import GbifDetectorProperties, GbifDeviceParam, CHwHeaderInfo
-from .FlatPanelEnums import *
+from FlatPanelCommon import *
+from FlatPanelStructures import GbifDetectorProperties, GbifDeviceParam, CHwHeaderInfo
+from FlatPanelEnums import *
 
 
 def gb_if_get_device_count():
@@ -383,13 +383,13 @@ def get_configuration(handle):
     hw_access = DWORD()
 
     ret = xis.Acquisition_GetConfiguration(handle, byref(frames), byref(rows), byref(columns),
-                                            byref(data_type), byref(sort_flags), byref(irq_enabled), byref(acq_type),
-                                            byref(system_id), byref(sync_mode), byref(hw_access))
+                                           byref(data_type), byref(sort_flags), byref(irq_enabled), byref(acq_type),
+                                           byref(system_id), byref(sync_mode), byref(hw_access))
     # data_type - always 2 for uint16
     # acq_type - internal use
     # system_id - internal use
     # hw_access - internal use
-    return ret, (frames.value, rows.value, columns.value, sort_flags.value, irq_enabled.value, sync_mode.value)
+    return ret, frames.value, rows.value, columns.value, sort_flags.value, irq_enabled.value, sync_mode.value
 
 
 def get_hw_header_info(handle):
@@ -407,7 +407,7 @@ def get_hw_header_info(handle):
     return ret, temp
 
 
-def define_dest_buffers(handle, frames=1, rows=2048, columns=2048):
+def define_dest_buffers(handle, dest_buffer, frames, rows, columns):
     """
     
     This function defines the pointers of the destination buffer for Acquire_Image. The
@@ -440,10 +440,8 @@ def define_dest_buffers(handle, frames=1, rows=2048, columns=2048):
     
     Definition: buf = (c_ushort*4194304)()   #in case of 2048 x 2048 sensor
     """
-    processed_data = (c_ushort * rows * columns * frames)()
-
-    ret = xis.Acquisition_DefineDestBuffers(handle, byref(processed_data), frames, rows, columns)
-    return ret, processed_data
+    ret = xis.Acquisition_DefineDestBuffers(handle, byref(dest_buffer), frames, rows, columns)
+    return ret
 
 
 def acquire_offset_image(handle, offset_data, rows=2048, cols=2048, frames=1):
@@ -553,7 +551,7 @@ def acquire_image(handle, frames, skip_frames, seq_options, offset_data=0, gain_
         information call Acquisition_GetErrorCode.
     """
     return xis.Acquisition_Acquire_Image(handle, frames, skip_frames, seq_options, offset_data, gain_data,
-                                        pixel_data)
+                                         pixel_data)
 
 
 def set_camera_mode(handle, mode):
@@ -682,11 +680,11 @@ def set_callbacks_and_messages(handle, end_frame_callback, end_acq_callback):
         In this routine you can perform any clean up at acquisition end. If this parameter is set to
         NULL, it is ignored.
     """
-    window_handle = None # For XISL app only
-    errors_message = UINT(0) # For XISL app only
-    loosing_frames_message = UINT(0) # For XISL app only
+    window_handle = None  # For XISL app only
+    errors_message = UINT(0)  # For XISL app only
+    loosing_frames_message = UINT(0)  # For XISL app only
     return xis.Acquisition_SetCallbacksAndMessages(handle, window_handle, errors_message, loosing_frames_message,
-                                                  end_frame_callback, end_acq_callback)
+                                                   end_frame_callback, end_acq_callback)
 
 
 def get_ready(handle):
@@ -834,18 +832,27 @@ def enum_sensors(enable_irq=True, always_open=False):
     return ret, temp.value
 
 
-def get_next_sensor():  # TODO: this function is not running, maybe only one sensor?
+def get_next_sensor(pos=None):  # TODO: this function is not running, maybe only one sensor?
     """
     You can use this function to iterate through all recognized sensors in the system. for a
     programming example see the initialization part of the XISL demonstration.
     """
-    pos = c_ulong(0)
+    if pos is None:
+        pos = c_ulong(0)
     handle = HACQDESC()
     ret = xis.Acquisition_GetNextSensor(byref(pos), byref(handle))
     return ret, pos, handle
 
 
-def init(board_type=BoardType.ELTEC_XRD_FGE_Opto, channel_nr=0, enable_irq=1, rows=4096, columns=4096, sort_flag=Sort.NOSORT, self_init=1,
+def get_comm_channel(handle):
+    channel_type = c_uint()
+    channel_number = c_int()
+    ret = xis.Acquisition_GetCommChannel(handle, byref(channel_type), byref(channel_number))
+    return ret, channel_type.value, channel_number.value
+
+
+def init(handle, board_type=BoardType.ELTEC_XRD_FGE_Opto, channel_nr=0, enable_irq=1, rows=4096, columns=4096,
+         sort_flag=Sort.NOSORT, self_init=1,
          always_open=0):
     """
     The Acquisition_Init function initializes the frame grabber board and the corresponding
@@ -890,10 +897,10 @@ def init(board_type=BoardType.ELTEC_XRD_FGE_Opto, channel_nr=0, enable_irq=1, ro
     debug versions of your applications because it is not possible to free all
     system resources allocated by another process.
     """
-    handle = HACQDESC()
     ret = xis.Acquisition_Init(byref(handle), board_type, channel_nr, enable_irq, rows, columns, sort_flag,
                                self_init, always_open)
     return ret, handle
+
 
 def get_error_code(handle):
     """
@@ -903,4 +910,3 @@ def get_error_code(handle):
     board_error = DWORD()
     ret = xis.Acquisition_GetErrorCode(handle, his_error, board_error)
     return ret, his_error.value, board_error.value
-

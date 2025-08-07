@@ -9,7 +9,7 @@ import sys
 if sys.version[0] != '2':
     raise SystemError("Python 3 is not supported.")
 
-from .FlatPanelCommon import *
+from FlatPanelCommon import *
 
 class GbifDeviceParam(Structure):
     _fields_ = [

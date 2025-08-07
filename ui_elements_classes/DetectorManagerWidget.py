@@ -23,8 +23,6 @@ class DetectorManagerWidget(QWidget, UI_DetectorManagerWidget):
         if self.dm_thread.isRunning():
             self.l_manager.setText("Running")
             self.l_manager.setStyleSheet("color: green;")
-        for d in self.dm_thread.get_connected():
-            self._add_tab(d)
 
     def _add_tab(self, name):
         dt = DetectorTab(self, name)
@@ -45,6 +43,9 @@ class DetectorManagerWidget(QWidget, UI_DetectorManagerWidget):
         det, cmd, value = args
         self.dm_queue.put((det, (cmd, value)))
         self.dm_thread.wake()
+
+    def detector_initialized(self, name):
+        self._add_tab(name)
 
 
 class Exposure(QGroupBox, UI_exposure):

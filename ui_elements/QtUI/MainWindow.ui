@@ -1206,7 +1206,7 @@
     <property name="title">
      <string>Tomography</string>
     </property>
-    <addaction name="actionNew_tomography"/>
+    <addaction name="a_Tomography"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -1249,9 +1249,12 @@
     <string>Switch Theme</string>
    </property>
   </action>
-  <action name="actionNew_tomography">
+  <action name="a_Tomography">
    <property name="text">
     <string>New tomography</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
    </property>
   </action>
  </widget>
