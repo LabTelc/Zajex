@@ -1,10 +1,12 @@
 import struct
 import hashlib
+import sys
+
 import numpy as np
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
-from utils import get_config
+from tomography.utils import get_config
 
 config = get_config()["Server"]
 block_size = int(config["block_size"])
@@ -27,7 +29,7 @@ class SocketStatusCode:
 
 def pad(data):
     pad_len = block_size - len(data) % block_size
-    if isinstance(data, unicode):  # Python 2
+    if sys.version[0] == "2" and isinstance(data, unicode):  # Python 2
         data = data.encode('utf-8')
     return data + bytes(bytearray([pad_len] * pad_len))
 

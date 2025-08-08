@@ -89,9 +89,10 @@ def get_save_image(filetype):
         return save_bin
     elif filetype == "txt":
         return save_txt
+    return "Save our souls, we don't know how to save this filetype"
 
 
-def normalize_array(array: np.array, dtype: np.dtype):
+def normalize_array(array: np.ndarray, dtype: np.dtype):
     if np.issubdtype(dtype, np.integer):
         dtype_max = np.iinfo(dtype).max
         return ((array - array.min()) / (array.max() - array.min()) * dtype_max).astype(dtype)
@@ -99,7 +100,7 @@ def normalize_array(array: np.array, dtype: np.dtype):
         return array
 
 
-def limits(arr: np.array, index: int) -> tuple:
+def limits_func(arr: np.ndarray, index: int) -> tuple:
     if index == 0:  # min/max
         vmin = arr.min()
         vmax = arr.max()
@@ -142,3 +143,10 @@ def create_item(im, im_id):
     item.setText(im.filepath.split("/")[-1])
     item.setData(im_id, Qt.UserRole)
     return item
+
+
+def arr_from_zoom(arr, limits):
+    x_lim, y_lim = limits
+    x_min, x_max = (x_lim[0], x_lim[1]) if x_lim[0] < x_lim[1] else (x_lim[1], x_lim[0])
+    y_min, y_max = (y_lim[0], y_lim[1]) if y_lim[0] < y_lim[1] else (y_lim[1], y_lim[0])
+    return arr[x_min:x_max, y_min:y_max]

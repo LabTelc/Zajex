@@ -1,5 +1,5 @@
-from Socket import send_message
-from FlatPanelEnums import ErrorCodes, FunctionCode
+from tomography.Socket import send_message
+from .FlatPanelEnums import ErrorCodes, FunctionCode
 
 
 def perform_function_call(sock, function, *args, **kwargs):
@@ -14,7 +14,6 @@ def perform_function_call(sock, function, *args, **kwargs):
         if "failure" in kwargs:
             exit(1)
     else:
-        print("Function {} executed successfully.".format(function.__name__))
-        print("Function code {}".format(getattr(FunctionCode, function.__name__)))
+        print("Function {}{} executed successfully.".format(function.__name__, args))
         send_message(sock, getattr(FunctionCode, function.__name__), ret, name)
     return response

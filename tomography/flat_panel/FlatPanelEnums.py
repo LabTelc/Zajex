@@ -28,7 +28,7 @@ class Sort:
 
 class Sequence:
     """
-        Sorting definitions for the XIS library.
+        Sequence definitions for the XIS library.
         """
     TWO_BUFFERS = 0x1
     ONE_BUFFER = 0x2
@@ -152,7 +152,7 @@ class GbIFInitType:
 
 class Gain_16x0_AM:
     """
-    Gain settings for the 16x0 AM series detectors, in Farads.
+    Gain settings for the 16x0 AM series tomography, in Farads.
     """
     g_0p1 = 0
     g_0p3 = 1
@@ -163,7 +163,7 @@ class Gain_16x0_AM:
 
 class Gain_NOP_Series:
     """
-    Gain settings for the xN/xO/xP series detectors, in Farads.
+    Gain settings for the xN/xO/xP series tomography, in Farads.
     """
     g_0p25 = 0
     g_0p5 = 1
@@ -220,7 +220,11 @@ class FunctionCode:
     @classmethod
     def _build_reverse_dict(cls):
         if not cls._reverse_dict:
-            cls._reverse_dict = {getattr(cls, attr): attr for attr in dir(cls) if isinstance(attr, dict)}
+            cls._reverse_dict = {
+                getattr(cls, attr): attr
+                for attr in dir(cls)
+                if not attr.startswith("_")
+            }
 
     @staticmethod
     def name(value):

@@ -7,20 +7,20 @@ if __name__ == '__main__':
     port = int(sys.argv[3])
 
     if name == "Dexela":
-        from detectors import Dexela
+        from tomography import Dexela
 
         det = Dexela()
     elif name == "XRD1611":
 
         det = XRD1611()
     elif name == "XRD1622":
-        from detectors import XRD1622
+
         det = XRD1622()
     elif name == "WidePIX":
-        from detectors import WidePIX
+        from tomography import WidePIX
         det = WidePIX()
     else:
-        from detectors import Dummy
+        from tomography import Dummy
         det = Dummy()
 
     det.init_client(address, port)

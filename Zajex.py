@@ -13,7 +13,7 @@ from PyQt5.QtGui import QIcon, QStandardItemModel
 from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
-from detectors import DetectorManagerThread
+from tomography import DetectorManagerThread, DetectorManagerWidget
 from ui_elements_classes import *
 from ui_elements import icon_app, icon_rotate_cw, icon_rotate_ccw, icon_load, icon_save
 from utils import *
@@ -49,9 +49,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.saving_thread.start()
 
         self.dm_window = None
-        self.dm_queue = Queue()
         self.dm_thread = DetectorManagerThread(self)
-        self.dm_thread.new_message.connect(lambda _args: self.log(*_args))
+        self.dm_thread.new_message.connect(lambda _args: self._new_message(*_args))
         self.dm_thread.new_image.connect(lambda _args: self._image_loader_handler(*_args))
         self.dm_thread.new_image.connect(self._last_image_handler)
 
@@ -73,14 +72,14 @@ class Main(QMainWindow, Ui_MainWindow):
             getattr(self, f"lw_{key}").doubleClicked.connect(self._lw_handler)
             getattr(self, f"lw_{key}").remove_items.connect(self.remove_items_from_model)
             getattr(self, f"lw_{key}").delete_items.connect(self.delete_items)
+            getattr(self, f"canvas_{key}").selection_changed.connect(self._selection_changed)
+            getattr(self, f"canvas_{key}").pixel_selected.connect(self.plot_histogram)
 
             self.list_views[key].setModel(self.models[key])
             self.combo_boxes[key].setModel(self.models[key])
             getattr(self, f"lw_{key}").set_move_mode("move")
 
         self.sliders = {key: getattr(self, f"slider_{key}") for key in ['a', 'b', 'c', 'd']}
-        self.sliders["lower"] = self.slider_lower
-        self.sliders["upper"] = self.slider_upper
         self.spin_boxes = {
             "lower": self.dsb_lower,
             "upper": self.dsb_upper,
@@ -123,10 +122,10 @@ class Main(QMainWindow, Ui_MainWindow):
             # Figure settings
             # - Intensity values
             self.cb_colormaps.currentIndexChanged: self._cb_colormaps_handler,
-            self.slider_lower.sliderReleased: self._slider_limits_handler,
-            self.slider_upper.sliderReleased: self._slider_limits_handler,
-            self.dsb_upper.editingFinished: self._dsb_limits_handler,
-            self.dsb_lower.editingFinished: self._dsb_limits_handler,
+            self.range_slider.lowerValueChanged: self.dsb_lower.setValue,
+            self.range_slider.upperValueChanged: self.dsb_upper.setValue,
+            self.dsb_upper.valueChanged: self._dsb_limits_handler,
+            self.dsb_lower.valueChanged: self._dsb_limits_handler,
             self.cb_auto_range.currentIndexChanged: self._cb_auto_range_handler,
             self.cb_from_zoom.stateChanged: self._cb_from_zoom_handler,
             self.pb_apply_all_range.clicked: self._pb_apply_all_handler,
@@ -154,8 +153,6 @@ class Main(QMainWindow, Ui_MainWindow):
             self.loading_thread.last_image: self._last_image_handler,
             self.saving_thread.image_saved: self._image_saver_handler,
             self.saving_thread.delete_signal: self._remove_handler,
-            self.canvas_main.selection_changed: self._selection_changed,
-            self.canvas_main.pixel_selected: self.plot_histogram,
             self.le_operation.return_pressed: self._le_operation_handler,
         }
 
@@ -222,78 +219,52 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _cb_colormaps_handler(self):
         self.parameters.cmap = self.cb_colormaps.currentText()
-        self.canvas_main.redraw()
-        self.plot_histogram()
-
-    def _slider_limits_handler(self):
-        self.last_action_ = "m"
-        if self.curr_image is None:
-            return
-        arr = self.curr_image.array
-        if self.parameters.from_zoom:
-            arr = self._arr_from_zoom()
-        arr_diff = arr.max() - arr.min()
-        slider = self.sender().objectName().split('_')[-1]
-        value = self.sender().value()
-
-        if slider == "upper":
-            if value <= self.sliders["lower"].value():
-                self.sender().setValue(self.sliders["lower"].value() + 1)
-                return
-            self.curr_image.vmax = value * arr_diff / 100 + arr.min()
-        elif slider == "lower":
-            if value >= self.sliders["upper"].value():
-                self.sender().setValue(self.sliders["upper"].value() - 1)
-                return
-            self.curr_image.vmin = value * arr_diff / 100 + arr.min()
-
-        self.spin_boxes[slider].blockSignals(True)
-        self.spin_boxes[slider].setValue(value * arr_diff / 100)
-        self.spin_boxes[slider].blockSignals(False)
-        self.canvas_main.redraw()
+        self.canvas_a.redraw()
         self.plot_histogram()
 
     def _dsb_limits_handler(self):
         value = self.sender().value()
-        spin_box = self.sender().objectName().split('_')[-1]
+        side = self.sender().objectName().split('_')[-1]
+        r_slider = self.range_slider
+        glimits = r_slider.lowerValue(), r_slider.upperValue()
+        letter = "a"
+
         self.last_action_ = "m"
         if self.curr_image is None:
             return
-        arr = self.curr_image.array
-        if self.parameters.from_zoom:
-            arr = self._arr_from_zoom()
-        if spin_box == "upper":
-            self.curr_image.vmax = value
-        elif spin_box == 'lower':
-            self.curr_image.vmin = value
-        self.sliders[spin_box].blockSignals(True)
-        self.sliders[spin_box].setValue(int(100 * value / (arr.max() - arr.min())))
-        self.sliders[spin_box].blockSignals(False)
-        self.canvas_main.redraw()
-        self.plot_histogram()
+
+        if glimits[0] <= value <= glimits[1]:
+            r_slider.blockSignals(True)
+            if side == "lower":
+                self.curr_image.vmin = value
+                getattr(self, f"canvas_{letter}").set_vmin(value)
+                # if letter in self.windows: self.windows[letter].set_vmin(value)
+                r_slider.setLowerValue(value)
+            else:
+                self.curr_image.vmax = value
+                getattr(self, f"canvas_{letter}").set_vmax(value)
+                # if letter in self.windows: self.windows[letter].set_vmax(value)
+                r_slider.setUpperValue(value)
+            r_slider.blockSignals(False)
+        else:
+            if side == "lower":
+                self.dsb_lower.setValue(glimits[0])
+            else:
+                self.dsb_upper.setValue(glimits[1])
 
     def _cb_auto_range_handler(self):
         if self.curr_image is None:
             return
         self.last_action_ = "a"
         if self.parameters.from_zoom:
-            arr = self._arr_from_zoom()
+            arr = arr_from_zoom(self.curr_image.array, (self.curr_image.x_lim, self.curr_image.y_lim))
         else:
             arr = self.curr_image.array
 
         idx = self.cb_auto_range.currentIndex()
-        self.curr_image.vmin, self.curr_image.vmax = limits(arr, idx)
-
-        for el in [self.sliders['upper'], self.sliders['lower'], self.dsb_lower, self.dsb_upper]:
-            el.blockSignals(True)
-        arr_diff = self.curr_image.array.max() - self.curr_image.array.min()
-        self.sliders['lower'].setValue(int(100 * self.curr_image.vmin / arr_diff))
-        self.sliders['upper'].setValue(int(100 * self.curr_image.vmax / arr_diff))
-        self.dsb_lower.setValue(self.curr_image.vmin)
-        self.dsb_upper.setValue(self.curr_image.vmax)
-        for el in [self.sliders['upper'], self.sliders['lower'], self.dsb_lower, self.dsb_upper]:
-            el.blockSignals(False)
-        self.canvas_main.redraw()
+        self.curr_image.vmin, self.curr_image.vmax = limits_func(arr, idx)
+        self.range_slider.setRange(self.curr_image.vmin, self.curr_image.vmax)
+        self.canvas_a.redraw()
         self.plot_histogram()
 
     def _cb_from_zoom_handler(self):
@@ -312,7 +283,7 @@ class Main(QMainWindow, Ui_MainWindow):
                     img.vmax = self.curr_image.vmax
                     img.vmin = self.curr_image.vmin
                 elif self.last_action_ == "a":
-                    img.vmin, img.vmax = limits(img.array, self.cb_auto_range.currentIndex())
+                    img.vmin, img.vmax = limits_func(img.array, self.cb_auto_range.currentIndex())
                 else:
                     pass
         if pb == 'rot':
@@ -323,11 +294,11 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _sb_rows_handler(self):
         self.curr_image.y_lim = (self.sb_rows_to.value(), self.sb_rows_from.value())
-        self.canvas_main.redraw()
+        self.canvas_a.redraw()
 
     def _sb_columns_handler(self):
         self.curr_image.x_lim = (self.sb_columns_from.value(), self.sb_columns_to.value())
-        self.canvas_main.redraw()
+        self.canvas_a.redraw()
 
     def _un_zoom(self):
         if self.curr_image is None:
@@ -335,7 +306,7 @@ class Main(QMainWindow, Ui_MainWindow):
         arr = self.curr_image.array
         self.curr_image.x_lim = (0, arr.shape[1])
         self.curr_image.y_lim = (arr.shape[0], 0)
-        self.canvas_main.redraw()
+        self.canvas_a.redraw()
         self.plot_histogram()
         self._init_image_info_values()
 
@@ -358,7 +329,7 @@ class Main(QMainWindow, Ui_MainWindow):
             index = self.cb_rotation.currentIndex()
             self.curr_image.array = np.rot90(self.curr_image.array, (index - old_rotation) % 4)
             self.curr_image.rotation = index
-            self.canvas_main.redraw()
+            self.canvas_a.redraw()
 
     def _mirror_handler(self, event):
         sender = self.sender().objectName().split("_")[-1]
@@ -374,7 +345,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 self.curr_image.mirror_LR = False
             elif event == 2:
                 self.curr_image.mirror_LR = True
-        self.canvas_main.redraw()
+        self.canvas_a.redraw()
 
     def _cb_images_handler(self, event):
         group = self.sender().objectName().split('_')[-1]
@@ -556,8 +527,8 @@ class Main(QMainWindow, Ui_MainWindow):
     def _remove_handler(self, im_id):
         if im_id not in self.images.keys():
             return
-        if im_id == self.canvas_main.image.id_:
-            self.canvas_main.reset_canvas()
+        if im_id == self.canvas_a.image.id_:
+            self.canvas_a.reset_canvas()
             self.canvas_histogram.reset_canvas()
         self.images.pop(im_id)
 
@@ -566,13 +537,7 @@ class Main(QMainWindow, Ui_MainWindow):
             return
         for sb in self.spin_boxes.values():
             sb.blockSignals(True)
-        for sl in [self.sliders['upper'], self.sliders['lower']]:
-            sl.blockSignals(True)
-
-        self.spin_boxes['lower'].setValue(self.curr_image.vmin)
-        self.spin_boxes['upper'].setValue(self.curr_image.vmax)
-        self.sliders['lower'].setValue(0)
-        self.sliders['upper'].setValue(100)
+        self.range_slider.setRange(self.curr_image.vmin, self.curr_image.vmax)
 
         self.spin_boxes['rows_from'].setRange(0, self.curr_image.y_lim[0])
         self.spin_boxes['rows_from'].setValue(self.curr_image.y_lim[1])
@@ -585,21 +550,23 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.l_im_mean.setText(str(self.curr_image.array.mean()))
         self.l_im_sigma.setText(str(self.curr_image.array.std()))
-        self.l_range_mean.setText(str(self._arr_from_zoom().mean()))
-        self.l_range_sigma.setText(str(self._arr_from_zoom().std()))
+        arr_zoom = arr_from_zoom(self.curr_image.array, (self.curr_image.x_lim, self.curr_image.y_lim))
+        self.l_range_mean.setText(str(arr_zoom.mean()))
+        self.l_range_sigma.setText(str(arr_zoom.std()))
 
         for sb in self.spin_boxes.values():
             sb.blockSignals(False)
-        for sl in [self.sliders['upper'], self.sliders['lower']]:
-            sl.blockSignals(False)
 
-    def _selection_changed(self):
+    def _selection_changed(self, limits):
+        self.canvas_a.set_camera_range(limits)
+        # if l in self.windows: self.windows[l].set_camera_range(limits)
+        (x_min, x_max), (y_max, y_min) = limits
+        self.curr_image.x_lim, self.curr_image.y_lim = (int(x_min), int(x_max)), (int(y_max), int(y_min))
         if self.parameters.from_zoom:
-            arr = self._arr_from_zoom()
+            arr = arr_from_zoom(self.curr_image.array, (self.curr_image.x_lim, self.curr_image.y_lim))
             self.curr_image.vmin = arr.min()
             self.curr_image.vmax = arr.max()
         self._init_image_info_values()
-        self.canvas_main.redraw()
         self.plot_histogram()
 
     def _lw_handler(self, event):
@@ -618,9 +585,19 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _tomography_handler(self):
         self.dm_thread.start()
-        self.dm_window = DetectorManagerWidget(None, self.dm_thread, self.dm_queue)
+        self.dm_window = DetectorManagerWidget(None, self.dm_thread)
         self.dm_thread.detector_initialized.connect(self.dm_window.detector_initialized)
         self.dm_window.show()
+
+    def _new_message(self, *message):
+        """
+        Handle new message from DetectorManagerThread
+        :param message: message to log
+        """
+        if self.dm_window is not None:
+            self.dm_window.new_message(message)
+        else:
+            self.log(*message)
 
     def plot_histogram(self, value=None):
         self.parameters.num_bins = self.slider_bins.value()
@@ -634,15 +611,14 @@ class Main(QMainWindow, Ui_MainWindow):
         self.cb_auto_range.setCurrentIndex(0)
 
         if self.parameters.from_zoom:
-            arr = self._arr_from_zoom()
+            arr = arr_from_zoom(self.curr_image.array, (self.curr_image.x_lim, self.curr_image.y_lim))
             self.curr_image.vmin = arr.min()
             self.curr_image.vmax = arr.max()
-        self.canvas_main.show_image(image)
+        self.canvas_a.show_image(image)
         self.plot_histogram()
         self._init_image_info_values()
 
     def log(self, text, log_type=LogTypes.Log):
-        print(text)
         if log_type == LogTypes.Log:
             text = f"<font color='green'>{text}</font>"
         elif log_type == LogTypes.Warning:
@@ -650,10 +626,6 @@ class Main(QMainWindow, Ui_MainWindow):
         elif log_type == LogTypes.Error:
             text = f"<font color='red'>{text}</font>"
         self.log_widget.append(text)
-
-    def _arr_from_zoom(self):
-        return self.curr_image.array[self.curr_image.y_lim[1]:self.curr_image.y_lim[0],
-        self.curr_image.x_lim[0]:self.curr_image.x_lim[1]]
 
     def resizeEvent(self, event):
         self.gb_fig_settings.setFixedWidth(int(event.size().width() / 6))
@@ -675,7 +647,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
 if __name__ == '__main__':
     parser = ArgumentParser(
-        prog="Vopex 3.0",
+        prog="Zajex",
         description='',
         epilog="")
     parser.add_argument("-s", "--shape", nargs=2, type=int, metavar=("width", "height"),

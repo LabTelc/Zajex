@@ -1,0 +1,2 @@
+from .DetectorManagerWidget import DetectorManagerWidget
+from .XRD1611Widget import XRD1611Widget

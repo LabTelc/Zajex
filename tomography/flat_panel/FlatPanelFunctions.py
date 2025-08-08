@@ -33,7 +33,7 @@ def gb_if_get_device_list(n_device_count):
     
     This function retrieves a list of parametr structures for all GbIF detector devices found by a
     network broadcast. If multiple network adapters are used in the host system, all of them are
-    checked for connection GbIF detectors.
+    checked for connection GbIF tomography.
     
     input parameters:
     GBIF_DEVICE_PARAM
@@ -495,14 +495,13 @@ def create_pixel_map(data, data_rows, data_columns):
     return corr_list, corr_list_size.value
 
 
-def acquire_image(handle, frames, skip_frames, seq_options, offset_data=0, gain_data=0, pixel_data=0):
+def acquire_image(handle, frames, skip_frames=0, seq_options=Sequence.DEST_ONE_FRAME, offset_data=0, gain_data=0, pixel_data=0):
     """
     
     This function acquires dwFrames frames and performs offset, gain and pixel corrections
     automatically. The routine returns immediately. If you want to be informed about frame end or
     acquisition end, then define in Acquisition_Init the suitable Callback functions and post from there
-    a corresponding message to your application. The correction algorithms are described in more
-    detail on page 13.
+    a corresponding message to your application.
     
     input parameters:
     handle
@@ -598,7 +597,7 @@ def set_camera_gain(handle, gain=Gain_NOP_Series.g_0p25):
 
 def set_camera_binning_mode(handle, binning_mode=1):
     """
-    Use this function to set the detectors binning mode and binning options.
+    Use this function to set the tomography binning mode and binning options.
     binning_mode:
         Used for selection of binning mode and additional options
             • bits 0 to 7: binning mode selection value
@@ -632,7 +631,7 @@ def set_camera_trigger_mode(handle, trigger_mode=TriggerMode.TriggerFrames):
 
 def get_camera_trigger_mode(handle):
     """
-    Retrieves trigger mode for detectors with Header >14 and DetectorType >2.
+    Retrieves trigger mode for tomography with Header >14 and DetectorType >2.
     """
 
     mode = WORD()

@@ -10,12 +10,10 @@ import numpy as np
 import select
 from socket import socket, AF_INET, SOCK_STREAM
 
-from FlatPanelFunctions import *
-from FlatPanelEnums import *
+from flat_panel import *
 from Socket import *
 
 from utils import get_config
-from common import perform_function_call
 
 config = get_config()["Server"]
 
@@ -35,7 +33,7 @@ pos, handle = perform_function_call(sock, get_next_sensor, failure=True)
 
 (frames, rows, columns, sort_flags, irq_enabled, sync_mode) = perform_function_call(sock, get_configuration, handle,
                                                                                     failure=True)
-frames = 1 # For this detector, we will use only one frame
+frames = 1
 temp_array = ()
 print("Creating empty array for data...")
 processed_data = (c_ushort * rows * columns * frames)()
@@ -67,9 +65,10 @@ perform_function_call(sock, set_camera_gain, handle, Gain_NOP_Series.g_0p25)
 perform_function_call(sock, set_camera_mode, handle, 0)  # the base time will be timing 0
 perform_function_call(sock, set_frame_sync_mode, handle, SyncMode.INTERNAL_TIMER)
 perform_function_call(sock, set_timer_sync, handle, 1000000)  # sets the timer to 1 s
-send_message(sock, FunctionCode.init, 0, "XRD1611")
-for i in range(10):
-    perform_function_call(sock, acquire_image, handle, 1, 0, Sequence.ONE_BUFFER)
+send_message(sock, FunctionCode.init, 0, "")
+
+# for i in range(10):
+#     perform_function_call(sock, acquire_image, handle, 1, 0, Sequence.DEST_ONE_FRAME)
 
 while True:
     try:
@@ -77,6 +76,7 @@ while True:
         if ready_to_read:
             try:
                 func_code, status_code, message = recv_unpack_message(sock)
+                perform_function_call(sock, FunctionCode.name(func_code), message.split(" "))
             except Exception as e:
                 print("Cannot unpack message:", e)
                 break

@@ -8,16 +8,16 @@ import numpy as np
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from utils import get_config, LogTypes
-from .Socket import *
-from .FlatPanelEnums import ErrorCodes, FunctionCode
+from tomography.Socket import *
+from tomography.flat_panel.FlatPanelEnums import ErrorCodes, FunctionCode
 
 config = get_config()["Server"]
 timeout = float(config["timeout"])
 
 
 class DetectorManagerThread(QThread):
-    new_image = pyqtSignal(tuple, name="detector_message")
-    new_message = pyqtSignal(tuple, name="detector_image")  # (arr, filepath (info/name), slot)
+    new_image = pyqtSignal(tuple, name="detector_image")
+    new_message = pyqtSignal(tuple, name="detector_message")  # (arr, filepath (info/name), slot)
     detector_initialized = pyqtSignal(str, name="detector_initialized")
 
     def __init__(self, parent=None):
@@ -27,6 +27,17 @@ class DetectorManagerThread(QThread):
         self._worker_processes = []
         self._worker_threads = []
         self._queues = {}
+
+    def post_command(self, name, command):
+        """
+        Post a command to the detector's queue.
+        :param name: Name of the detector.
+        :param command: Tuple containing the function command and data.
+        """
+        if name in self._queues:
+            self._queues[name].put(command)
+        else:
+            self.new_message.emit((f"[{name}]: Queue not found", LogTypes.Error))
 
     def handle_detector(self, worker_socket):
         image_index = 0
@@ -45,10 +56,12 @@ class DetectorManagerThread(QThread):
                 except Exception as e:
                     self.new_message.emit((f"[{name}]: Error receiving data: {str(e)}", LogTypes.Error))
                     break
-                print(func_code)
                 self.new_message.emit((f"[{name}]: {FunctionCode.name(func_code)}: {ErrorCodes.name(status_code)}", LogTypes.Error if status_code != 0 else LogTypes.Log))
+                if func_code == FunctionCode.init:
+                    self.detector_initialized.emit(name)
                 if isinstance(message, np.ndarray):
                     self.new_image.emit((message, f"{name}_{image_index:04d}", "a"))
+                    image_index += 1
             else:
                 while not self._queues[name].empty():
                     try:
@@ -65,9 +78,9 @@ class DetectorManagerThread(QThread):
 
         detectors = config["detectors"]
         for detector in detectors.split(" "):
-            with open(f"logs/{detector}.log", "a") as logfile:
+            with open(f"logs/{detector}.log", "w") as logfile:
                 self._queues[detector.lower()] = Queue()
-                w = subprocess.Popen(f"conda run -n py27 python detectors/{detector}.py",
+                w = subprocess.Popen(f"conda run -n py27 python tomography/{detector}.py",
                                      stdout=logfile, stderr=logfile, cwd="./")
                 self._worker_processes.append(w)
 

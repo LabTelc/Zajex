@@ -1,159 +1,18 @@
-
 Connecting to server at localhost:8080
 Initializing detector...
-Error in <function enum_sensors at 0x0000000004A2E668> call: OK
-enum_sensors
+Function enum_sensors() executed successfully.
 Detected (1L,) sensors. Using only the first one...
-Error in <function get_next_sensor at 0x0000000004A2E6D8> call: OK
-get_next_sensor
-Error in <function get_configuration at 0x000000000498BC18> call: OK
-get_configuration
+Function get_next_sensor() executed successfully.
+Function get_configuration(c_void_p(2L),) executed successfully.
 Creating empty array for data...
-Error in <function set_callbacks_and_messages at 0x0000000004A2E198> call: OK
-set_callbacks_and_messages
-Error in <function define_dest_buffers at 0x000000000498BCF8> call: OK
-define_dest_buffers
-Error in <function set_camera_binning_mode at 0x000000000498BF98> call: OK
-set_camera_binning_mode
-Error in <function set_camera_trigger_mode at 0x0000000004A2E0B8> call: OK
-set_camera_trigger_mode
-Error in <function set_camera_gain at 0x000000000498BF28> call: OK
-set_camera_gain
-Error in <function set_camera_mode at 0x000000000498BEB8> call: OK
-set_camera_mode
-Error in <function set_frame_sync_mode at 0x0000000004A2E5F8> call: OK
-set_frame_sync_mode
-Error in <function set_timer_sync at 0x0000000004A2E588> call: OK
-set_timer_sync
-Error in <function acquire_image at 0x000000000498BE48> call: OK
-acquire_image
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of data
-('Cannot unpack message:', error(10054, 'An existing connection was forcibly closed by the remote host'))
-Closing detector connection...
-Closing socket...
-Closed gracefully.
-DLLMain()-DLL_PROCESS_ATTACH
-Init Mutex created
-Read Mutex created
-Close Init Mutex
-Close Read Mutex
-
-Connecting to server at localhost:8080
-Initializing detector...
-Error in <function enum_sensors at 0x000000000423E668> call: OK
-enum_sensors
-Detected (1L,) sensors. Using only the first one...
-Error in <function get_next_sensor at 0x000000000423E6D8> call: OK
-get_next_sensor
-Error in <function get_configuration at 0x000000000419BC18> call: OK
-get_configuration
-Creating empty array for data...
-Error in <function set_callbacks_and_messages at 0x000000000423E198> call: OK
-set_callbacks_and_messages
-Error in <function define_dest_buffers at 0x000000000419BCF8> call: OK
-define_dest_buffers
-Error in <function set_camera_binning_mode at 0x000000000419BF98> call: OK
-set_camera_binning_mode
-Error in <function set_camera_trigger_mode at 0x000000000423E0B8> call: OK
-set_camera_trigger_mode
-Error in <function set_camera_gain at 0x000000000419BF28> call: OK
-set_camera_gain
-Error in <function set_camera_mode at 0x000000000419BEB8> call: OK
-set_camera_mode
-Error in <function set_frame_sync_mode at 0x000000000423E5F8> call: OK
-set_frame_sync_mode
-Error in <function set_timer_sync at 0x000000000423E588> call: OK
-set_timer_sync
-Error in <function acquire_image at 0x000000000419BE48> call: OK
-acquire_image
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of frame
-End of data
-('Cannot unpack message:', error(10054, 'An existing connection was forcibly closed by the remote host'))
-Closing detector connection...
-Closing socket...
-Closed gracefully.
-DLLMain()-DLL_PROCESS_ATTACH
-Init Mutex created
-Read Mutex created
-Close Init Mutex
-Close Read Mutex
-
-Connecting to server at localhost:8080
-Initializing detector...
-Function enum_sensors executed successfully.
-Function code 36
-Detected (1L,) sensors. Using only the first one...
-Function get_next_sensor executed successfully.
-Function code 37
-Function get_configuration executed successfully.
-Function code 13
-Creating empty array for data...
-Function set_callbacks_and_messages executed successfully.
-Function code 25
-Function define_dest_buffers executed successfully.
-Function code 15
-Function set_camera_binning_mode executed successfully.
-Function code 21
-Function set_camera_trigger_mode executed successfully.
-Function code 23
-Function set_camera_gain executed successfully.
-Function code 20
-Function set_camera_mode executed successfully.
-Function code 19
-Function set_frame_sync_mode executed successfully.
-Function code 35
-Function set_timer_sync executed successfully.
-Function code 34
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of data
-Function acquire_image executed successfully.
-Function code 18
-End of frame
-End of data
+Function set_callbacks_and_messages(c_void_p(2L), <CFunctionType object at 0x00000000050CD118>, <CFunctionType object at 0x00000000050CD1E8>) executed successfully.
+Function define_dest_buffers(c_void_p(2L), <__main__.c_ushort_Array_4096_Array_4096_Array_1 object at 0x00000000050C0F48>, 1, 4096L, 4096L) executed successfully.
+Function set_camera_binning_mode(c_void_p(2L), 257) executed successfully.
+Function set_camera_trigger_mode(c_void_p(2L), 3) executed successfully.
+Function set_camera_gain(c_void_p(2L), 0) executed successfully.
+Function set_camera_mode(c_void_p(2L), 0) executed successfully.
+Function set_frame_sync_mode(c_void_p(2L), 2) executed successfully.
+Function set_timer_sync(c_void_p(2L), 1000000) executed successfully.
 ('Cannot unpack message:', error(10054, 'An existing connection was forcibly closed by the remote host'))
 Closing detector connection...
 Closing socket...

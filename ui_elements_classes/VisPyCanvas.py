@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from vispy.scene import SceneCanvas
 from vispy.scene.visuals import Image, Rectangle
 
-from utils import CustomPanZoomCamera
+from utils import CustomPanZoomCamera, ImageObject
 
 
 class VisPyCanvas(QWidget):
@@ -14,8 +14,9 @@ class VisPyCanvas(QWidget):
     save_image = pyqtSignal(tuple, name='save image')
     open_window = pyqtSignal(name='open window')
     closed_window = pyqtSignal(name='close window')
+    pixel_selected = pyqtSignal(int, name='pixel selected')
 
-    def __init__(self, parent=None, size=(800, 600)):
+    def __init__(self, parent=None, size=(1500, 1500)):
         """
         Wrapper for VisPy canvas for controlled usage in PyQt app
         :param parent: parent QWidget
@@ -60,15 +61,28 @@ class VisPyCanvas(QWidget):
         self.rect.visible = False
         self.view.camera = CustomPanZoomCamera(aspect=1)
         self.view.camera.flip = (0, 1)
+        # Zajex
+        self.image_object = None
+        self.params = None
 
-    def show_image(self, image: np.ndarray):
+    def redraw(self):
+        pass
+
+    def reset_canvas(self):
+        pass
+
+    def show_image(self, image: ImageObject):
         """
         Set data of the image visual
-        :param image: numpy 2D array of image data
+        :param image: ImageObject containing image data and metadata
         """
         if not self.image.visible:
             self.image.visible = True
-        self.image_data = image
+        self.image_object = image
+        filename = image.filepath.split("/")[-1]
+        self.params = self.window().parameters
+        self.parent().setTitle(f"Image: {filename} [{image.array.shape[0]}x{image.array.shape[1]}]")
+        self.image_data = image.array
         self.image.set_data(self.image_data)
         f = 0
         self.selection_changed.emit(((0 + f, self.image_data.shape[1] - f), (self.image_data.shape[0] - f, 0 + f)))
@@ -105,7 +119,7 @@ class VisPyCanvas(QWidget):
     def set_camera_range(self, limits):
         """
         Set camera range
-        :param limits: tuple (xmin, xmax), (ymin, ymax)
+        :param limits: tuple (x_min, x_max), (y_max, y_min)
         """
         self.view.camera.set_range(x=limits[0], y=limits[1])
 
@@ -140,8 +154,11 @@ class VisPyCanvas(QWidget):
             self.selection_changed.emit(((0, self.image_data.shape[1]), (self.image_data.shape[0], 0)))
 
     def _hide_label(self):
-        self.label.setText("")
-        self.label_timer.stop()
+        if self.canvas.native.underMouse():
+            self.label_timer.start()
+        else:
+            self.label.setText("")
+            self.label_timer.stop()
 
     def _on_mouse_move(self, event):
         pos = self._canvas2image_coord(event.pos)
@@ -196,6 +213,7 @@ class VisPyCanvas(QWidget):
 
     def _on_mouse_release(self, event):
         if self._drag_start is None:
+            self._read_pixel_value(event.pos)
             return
 
         start = self._canvas2image_coord(self._drag_start)
@@ -222,9 +240,16 @@ class VisPyCanvas(QWidget):
         menu.addAction("Save render (tiff)", self._save_render)
         menu.addAction("Save image (tiff)", lambda: self.save_image.emit(("tiff", False)))
         menu.addAction("Save image (bin)", lambda: self.save_image.emit(("bin", False)))
-        menu.addAction("Save all images (tiff)", lambda: self.save_image.emit(("tiff", True)))
-        menu.addAction("Save all images (bin)", lambda: self.save_image.emit(("bin", True)))
+        # menu.addAction("Save all images (tiff)", lambda: self.save_image.emit(("tiff", True)))
+        # menu.addAction("Save all images (bin)", lambda: self.save_image.emit(("bin", True)))
         menu.exec_(self.canvas.native.mapToGlobal(event.native.pos()))
+
+    def _read_pixel_value(self, pos):
+        pos = self._canvas2image_coord(pos)
+        x, y = int(pos[0]), int(pos[1])
+        if 0 <= x < self.image_data.shape[1] and 0 <= y < self.image_data.shape[0]:
+            pixel_data = self.image_data[int(y), int(x)]
+            self.pixel_selected.emit(pixel_data)
 
     def closeEvent(self, event):
         self.closed_window.emit()
