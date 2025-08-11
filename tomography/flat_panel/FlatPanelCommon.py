@@ -9,7 +9,11 @@ import sys
 if sys.version[0] != '2':
     raise SystemError("Python 3 is not supported.")
 
-dllPath = 'C:/XIS/SDK64/XISL.dll'
+
+import os.path
+dllPath = os.path.dirname(__file__)
+dllPath = os.path.join(dllPath, 'XISL.dll')
+print dllPath
 
 from ctypes import *
 

@@ -21,7 +21,7 @@ from utils import *
 Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/QtUI/MainWindow.ui')
 
 
-class Main(QMainWindow, Ui_MainWindow):
+class Main(QMainWindow, Ui_MainWindow):  # TODO: client for Soloist
     def __init__(self, args):
         super(Main, self).__init__()
         self.setupUi(self)
@@ -595,7 +595,7 @@ class Main(QMainWindow, Ui_MainWindow):
         :param message: message to log
         """
         if self.dm_window is not None:
-            self.dm_window.new_message(message)
+            self.dm_window.new_message(message, LogTypes.Log)
         else:
             self.log(*message)
 
