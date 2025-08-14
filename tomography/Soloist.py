@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 # python 2.7 #
 import sys
+
 if sys.version[0] != '2':
     raise SystemError("Python 3 is not supported.")
 
 import select
+import time
 from socket import socket, AF_INET, SOCK_STREAM
+from threading import Thread
 
 from soloist import *
 from Socket import send_message, recv_unpack_message
@@ -29,8 +32,23 @@ handles, count = perform_function_call(sock, connect, failure=True)
 print("Detected {} tables. Using only the first one...".format(count))
 handle = handles[0]
 perform_function_call(sock, enable, handle, failure=True)
-perform_function_call(sock, wait_mode, handle, WaitType.NoWait)
 print("Table ready for commands.")
+
+
+def feedback_thread():
+    while True:
+        try:
+            perform_function_call(sock, get_program_position_feedback, handle)
+            perform_function_call(sock, get_axis_status, handle)
+            time.sleep(0.1)
+        except Exception as e:
+            print("Error in feedback thread:", e)
+            break
+
+
+feedback = Thread(target=feedback_thread)
+feedback.daemon = True
+feedback.start()
 
 ### Waiting for commands and sending feedback ###
 while True:
@@ -45,12 +63,9 @@ while True:
             except Exception as e:
                 print("Cannot unpack message:", e)
                 break
-        perform_function_call(sock, get_program_position_feedback, handle)
-        perform_function_call(sock, get_axis_status, handle)
     except KeyboardInterrupt:
         break
 
 print("Closing socket...")
 sock.close()
 print("Closed gracefully.")
-
