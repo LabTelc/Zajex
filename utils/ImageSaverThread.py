@@ -22,7 +22,10 @@ class ImageSaverThread(QThread):
         while not self.isInterruptionRequested():
             while not self.image_queue.empty():
                 im_id, ftype, file_path, kwargs = self.image_queue.get()
-                image = self.images[im_id]
+                if isinstance(im_id, int):
+                    image = self.images[im_id]
+                else:
+                    image = im_id
                 name = image.filepath.split("/")[-1].split(".")[:-1]
                 name = "".join(name)
                 while os.path.exists(os.path.join(file_path, name + "." + ftype)):

@@ -1,2 +1,2 @@
-from .DetectorManagerWidget import DetectorManagerWidget
+from .TomographyManagerWidget import TomographyManagerWidget
 from .XRD1611Widget import XRD1611Widget

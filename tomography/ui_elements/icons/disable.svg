@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="88.558754mm"
+   height="96.815292mm"
+   viewBox="0 0 88.558754 96.815292"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-60.80597,-94.075763)">
+    <g
+       id="g2"
+       transform="rotate(-0.37242263,105.11304,148.76387)"
+       style="stroke:#d40000">
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#d40000;stroke-width:10.9115;stroke-dasharray:none"
+         id="path1"
+         d="M 62.075955,149.43729 C 33.999691,144.55988 14.610941,117.01839 19.488358,88.942127 24.365775,60.865864 51.907261,41.477113 79.983524,46.354531 c 28.076266,4.877417 47.465016,32.418902 42.587596,60.495169 -1.88086,10.82694 -7.22087,20.93161 -15.10644,28.58525"
+         transform="matrix(-0.73321225,-0.22881456,0.22881456,-0.73321225,134.77921,234.64265)" />
+      <ellipse
+         style="fill:#d40000;stroke:none;stroke-width:19.3617;stroke-dasharray:none"
+         id="path2"
+         cx="86.924278"
+         cy="110.77695"
+         rx="4.2095957"
+         ry="4.1863384" />
+      <ellipse
+         style="fill:#d40000;stroke:none;stroke-width:19.3617;stroke-dasharray:none"
+         id="path2-9"
+         cx="123.47427"
+         cy="110.88695"
+         rx="4.2095957"
+         ry="4.1863384" />
+    </g>
+    <g
+       id="g3"
+       style="fill:#d40000">
+      <ellipse
+         style="fill:#d40000;stroke:none;stroke-width:19.2553;stroke-dasharray:none"
+         id="path2-4-3"
+         cx="103.96138"
+         cy="99.337563"
+         rx="4.1864662"
+         ry="4.1633368"
+         transform="rotate(-0.60237673)" />
+      <rect
+         style="fill:#d40000;stroke:none;stroke-width:7.41122;stroke-dasharray:none"
+         id="rect2"
+         width="8.3433475"
+         height="30.057295"
+         x="100.82832"
+         y="98.460243" />
+      <ellipse
+         style="fill:#d40000;stroke:none;stroke-width:19.1489;stroke-dasharray:none"
+         id="path2-4"
+         cx="103.64471"
+         cy="129.45824"
+         rx="4.1633363"
+         ry="4.1403346"
+         transform="rotate(-0.60237673)" />
+    </g>
+  </g>
+</svg>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>616</width>
-    <height>531</height>
+    <height>548</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -105,7 +105,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="rb_accu">
+             <widget class="QRadioButton" name="rb_sum">
               <property name="text">
                <string>Accumulate</string>
               </property>
@@ -229,12 +229,18 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_2">
+      <widget class="QGroupBox" name="gb_corrections">
+       <property name="toolTip">
+        <string>First corrections are applied then the image goes to preview</string>
+       </property>
        <property name="title">
         <string>Corrections</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -360,34 +366,8 @@
         <string>Exposure control</string>
        </property>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="2" rowspan="3">
-         <widget class="QPushButton" name="pushButton_2">
-          <property name="text">
-           <string>Save last</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QPushButton" name="pushButton_3">
-          <property name="font">
-           <font>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Abort</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1" rowspan="3">
-         <widget class="QCheckBox" name="checkBox_3">
-          <property name="text">
-           <string>Repeat</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="pushButton">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="pb_acquire">
           <property name="font">
            <font>
             <pointsize>10</pointsize>
@@ -398,11 +378,43 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="3">
+         <widget class="QPushButton" name="pb_save">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Save last</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QPushButton" name="pb_abort">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Abort</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="cb_repeat">
+          <property name="text">
+           <string>Repeat</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_5">
+      <widget class="QGroupBox" name="gb_preview">
+       <property name="toolTip">
+        <string>First rotation then mirror LR, then mirror UD</string>
+       </property>
        <property name="title">
         <string>Preview</string>
        </property>
@@ -418,7 +430,7 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QComboBox" name="comboBox">
+         <widget class="QComboBox" name="cb_slot">
           <item>
            <property name="text">
             <string>A</string>
@@ -449,7 +461,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QComboBox" name="comboBox_2">
+         <widget class="QComboBox" name="cb_rotation">
           <item>
            <property name="text">
             <string>0°</string>
@@ -480,14 +492,14 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QCheckBox" name="checkBox">
+         <widget class="QCheckBox" name="cb_mirrorLR">
           <property name="text">
            <string>Left - Right</string>
           </property>
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QCheckBox" name="checkBox_2">
+         <widget class="QCheckBox" name="cb_mirrorUD">
           <property name="text">
            <string>Up- Down</string>
           </property>
@@ -499,7 +511,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QTextEdit" name="te_log">
+    <widget class="QTextEdit" name="log_widget">
      <property name="readOnly">
       <bool>true</bool>
      </property>

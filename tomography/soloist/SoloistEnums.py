@@ -1,4 +1,11 @@
-class StatusItem:
+try:
+    from tomography.my_enum import MyEnum
+except ImportError:
+    from my_enum import MyEnum
+import os
+
+
+class StatusItem(MyEnum):
     PositionCommand = 0
     PositionFeedback = 1
     PositionFeedbackAuxiliary = 2
@@ -45,7 +52,218 @@ class StatusItem:
     AccelerationError = 49
 
 
-class WaitType:
+class WaitType(MyEnum):
     NoWait = 0
     MoveDone = 1
     InPos = 2
+
+
+class ErrorCode(MyEnum):
+    NoError = 0
+    RegistryAccessError = 1
+    InvalidInstallationDirectory = 2
+    AccessToFlashParametersDenied = 3
+    SemaphoreFailure = 4
+    IdentifyNotIssued = 5
+    TooManyControllersFound = 6
+    NoControllersFoundOnNetwork = 7
+    FoundDuplicateControllerNumbers = 8
+    DuplicateControllerFound = 9
+    LoaderIsCurrentlyRunning = 10
+    EthernetConnectionFailure = 11
+    USBConnectionFailure = 12
+    ControllerNotFound = 13
+    InterDrvNoComm = 14
+    InterDrvSlaveConnectionAttempt = 15
+    InterDrvCmdResetError = 16
+    VersionIncompatible = 17
+    USBSetupFailure = 18
+    USBBroadcastFailure = 19
+    EthernetSocketSetupFailure = 20
+    EthernetBroadcastFailure = 21
+    InvalidValueForEthernetSettings = 22
+    InvalidNetworkSetupArgument = 23
+    ControllerNameIsTooLong = 24
+    ControllerNameInvalid = 25
+    ControllerNameIsLocked = 26
+    ControllerNameLockFailed = 27
+    ControllerSetupVersionMismatch = 28
+    CannotOpenFile = 29
+    CannotCreateFile = 30
+    InvalidFileExtension = 31
+    CorruptFileFound = 32
+    CorruptMemoryFileFound = 33
+    InvalidProfileFormat = 34
+    InvalidParameterFileFormat = 35
+    Start2DLine = 37
+    MissingStartArgument = 38
+    MissingEndArgument = 39
+    MissingSampleDistValue = 40
+    InvalidColumnData = 41
+    InvalidCalKeyword = 42
+    InvalidCalValue = 43
+    MixedCalFileFound = 44
+    IncorrectNumberOfPoints = 45
+    MissingSlaveValue = 46
+    MissingMasterValue = 47
+    IncorrectPointsSequence = 48
+    InvalidMasterUnit = 49
+    InvalidDirectionReversal = 50
+    PointDataBeforeNumPoints = 51
+    PointDataBeforeMasterUnit = 52
+    PointDataBeforeSlaveUnit = 53
+    SlaveUnitBeforeMasterUnit = 54
+    SlaveUnitBeforeNumPoints = 55
+    InvalidCamKeyword = 56
+    EthernetCommunicationReset = 59
+    USBCommunicationReset = 60
+    EthernetCommunicationBusy = 61
+    ControllerIsDisconnected = 62
+    InvalidControllerNumber = 63
+    InterDrvNoAxis = 64
+    InvalidAxisNumber = 65
+    NoParameterTypeSpecified = 66
+    ParameterNotIdentified = 67
+    ParameterAccessDenied = 69
+    ParameterValueTooSmall = 70
+    ParameterValueTooLarge = 71
+    InvalidParameterInfo = 72
+    UsageStatisticsFailure = 73
+    NoProgramLoaded = 74
+    HeapAllocationFailure = 75
+    CodeSectionIsTooSmall = 76
+    DataSectionIsTooSmall = 77
+    TaskNotRunningInMonitor = 78
+    VersionMismatch = 79
+    TaskNotReadyForImmediate = 80
+    TaskNotActiveForImmediate = 81
+    ProgramEndedIncorrectly = 82
+    ImmediateCommandAborted = 83
+    InvalidSymbolsFileGiven = 84
+    ProgramCounterNotFound = 85
+    LineNumberNotFound = 86
+    ProgramFileNotFound = 87
+    TaskErrorFound = 88
+    ProgramReachedCompletion = 89
+    InvalidVariableLookupArgument = 90
+    MissingVariableLookupArgument = 91
+    ReferenceTypeNotFound = 92
+    ReferenceIsAnArray = 93
+    UnknownReferenceType = 94
+    MaximumCollectionExceeded = 95
+    InvalidOptionalDataNumber = 96
+    CollectionActive = 97
+    MemoryAllocationRequestTooLarge = 98
+    RegisterAccessOutOfBounds = 99
+    InsufficientFileSystemMemory = 100
+    FileTransferFailure = 101
+    FailureRetrievingFileSystemDirectory = 102
+    FileSystemOptimizationFailure = 103
+    UnableToEraseFileSystem = 104
+    InvalidFileSystemOption = 105
+    FileDoesNotExist = 106
+    FileCurrentlyExists = 107
+    FileNameIsTooLarge = 108
+    CallbacksNotRegistered = 109
+    InvalidCallbackType = 110
+    UnableToRegisterCallback = 111
+    UnableToReleaseCallback = 112
+    ExecuteCmdParameterOutOfRange = 113
+    CommandParameterSizeNotFound = 114
+    InvalidReturnValue = 115
+    ResultingTaskError = 116
+    InvalidCommand = 117
+    PasswordFoundOnControllerIsInvalid = 121
+    ControllerNumberOutOfRange = 122
+    TaskNumberOutOfRangeOrProtected = 123
+    FirmwareLoadError = 124
+    TimeSlotResetError = 126
+    InvalidAerobasicDirective = 127
+    BuildErrorsFoundInCompiler = 128
+    AssemblerSystemErrorDetected = 129
+    EmptyCommandLine = 130
+    InvalidCommandLine = 131
+    ControllerBootHasNotBeenIssued = 132
+    ControllerResetHasNotBeenIssued = 133
+    MissingEndQuoteInStringArgument = 134
+    UnexpectedCommandArgument = 135
+    InvalidCommandArgument = 136
+    ErrorProcessingStringElement = 137
+    InvalidReturnTypeSpecified = 138
+    StringToTypeConversionError = 139
+    MissingConsoleArgument = 140
+    InvalidCommandUsage = 141
+    StringParameterIsTooLong = 142
+    InvalidIntegerValueEntered = 143
+    InvalidPassedPointer = 144
+    InterfaceNotEnabled = 145
+    InvalidArgument = 146
+    OptimizationInProgress = 147
+    BufferSizeTooLarge = 148
+    CollectionAborted = 149
+    DemoUnlockFailed = 150
+    OutOfMemory = 151
+    DemoRenewFailed = 152
+    DataCollectionConfiguration = 153
+    ReceiveHeaderMismatch = 162
+    ReceiveTimeout = 163
+    PCDeviceFailure = 164
+    SendTimeout = 165
+    ReceiveResponseMismatch = 180
+    EndOfFileFound = 186
+    CalibrationFileError = 187
+
+
+class FunctionCode(MyEnum):
+    ServerConnect = 1000
+    connect = 0
+    disconnect = 1
+    reset = 2
+    enable = 3
+    disable = 4
+    free_run = 5
+    free_run_stop = 6
+    home = 7
+    acknowledge_all = 8
+    move = 9
+    wait_mode = 10
+    get_status_item = 11
+    get_axis_status = 12
+    get_program_position_feedback = 13
+    abort = 14
+
+
+class AxisStatus(MyEnum):
+    Enabled = 0
+    Homed = 1
+    InPosition = 2
+    MoveActive = 3
+    AccelerationPhase = 4
+    DecelerationPhase = 5
+    PositionCaptureActive = 6
+    CurrentClamp = 7
+    BrakeOutput = 8
+    MotionIsCw = 9
+    MasterSlaveControl = 10
+    CalibrationActive = 11
+    CalibrationEnabled = 12
+    Homing = 14
+    AutofocusActive = 18
+    CommandShapingFilterDone = 19
+    InPosition2 = 20
+    ServoControl = 21
+    CwEndOfTravelLimitInput = 22
+    CcwEndOfTravelLimitInput = 23
+    HomeLimitInput = 24
+    MarkerInput = 25
+    HallAInput = 26
+    HallBInput = 27
+    HallCInput = 28
+    SineEncoderError = 29
+    CosineEncoderError = 30
+    EmergencyStopInput = 31
+
+    @staticmethod
+    def get(value):
+        value = int(value)
+        return [attr for attr in dir(AxisStatus) if attr[0].isupper() and (value >> getattr(AxisStatus, attr)) & 1]

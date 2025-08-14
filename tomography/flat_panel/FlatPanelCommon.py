@@ -13,7 +13,6 @@ if sys.version[0] != '2':
 import os.path
 dllPath = os.path.dirname(__file__)
 dllPath = os.path.join(dllPath, 'XISL.dll')
-print dllPath
 
 from ctypes import *
 

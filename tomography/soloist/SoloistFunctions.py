@@ -8,14 +8,17 @@ Created on Mon Sep 04 13:20:28 2017
 # python 2.7 #
 import sys
 
+from SoloistEnums import StatusItem
+
 if sys.version[0] != '2':
     raise SystemError("Python 3 is not supported.")
 
 import os
 from ctypes import *
 
-
-dllpath = (os.path.dirname(__file__))
+dllpath = os.path.dirname(__file__)
+ablib = CDLL(os.path.join(dllpath, 'AeroBasic64.dll'))
+corelib = CDLL(os.path.join(dllpath, 'SoloistCore64.dll'))
 sclib = CDLL(os.path.join(dllpath, 'SoloistC64.dll'))
 
 SoloistHandle = c_void_p
@@ -36,7 +39,6 @@ def connect():
 
     The individual handle is then extracted as handle = handles[0], handles[1] etc.
     """
-
     handles = pointer(SoloistHandle())
     handle_count = c_ulong()
     ret = sclib.SoloistConnect(byref(handles), byref(handle_count))
@@ -68,6 +70,10 @@ def reset(handle, restart_programs=False):
     Returns 1 on success, 0 on error.
     """
     return sclib.SoloistReset(handle, restart_programs)
+
+
+def abort(handle):
+    return sclib.SoloistAbort(handle)
 
 
 # from SoloistAeroBasicCommands.h
@@ -129,3 +135,19 @@ def get_status_item(handle, item):
     value = c_double()
     ret = sclib.SoloistStatusGetItem(handle, item, byref(value))
     return ret, value.value
+
+
+def get_axis_status(handle):
+    """
+    Gets status from set {Homed, Enabled} of the specified axis.
+    """
+    ret, value = get_status_item(handle, StatusItem.AxisStatus)
+    return ret, value
+
+
+def get_program_position_feedback(handle):
+    """
+    Gets the program position feedback from the Soloist device specified by handle.
+    """
+    ret, value = get_status_item(handle, StatusItem.ProgramPositionFeedback)
+    return ret, float(value)

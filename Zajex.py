@@ -13,7 +13,7 @@ from PyQt5.QtGui import QIcon, QStandardItemModel
 from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.uic import loadUiType
 
-from tomography import DetectorManagerThread, DetectorManagerWidget
+from tomography import TomographyManagerThread, TomographyManagerWidget
 from ui_elements_classes import *
 from ui_elements import icon_app, icon_rotate_cw, icon_rotate_ccw, icon_load, icon_save
 from utils import *
@@ -21,7 +21,7 @@ from utils import *
 Ui_MainWindow, QMainWindow = loadUiType('./ui_elements/QtUI/MainWindow.ui')
 
 
-class Main(QMainWindow, Ui_MainWindow):  # TODO: client for Soloist
+class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, args):
         super(Main, self).__init__()
         self.setupUi(self)
@@ -49,10 +49,8 @@ class Main(QMainWindow, Ui_MainWindow):  # TODO: client for Soloist
         self.saving_thread.start()
 
         self.dm_window = None
-        self.dm_thread = DetectorManagerThread(self)
-        self.dm_thread.new_message.connect(lambda _args: self._new_message(*_args))
-        self.dm_thread.new_image.connect(lambda _args: self._image_loader_handler(*_args))
-        self.dm_thread.new_image.connect(self._last_image_handler)
+        self.dm_thread = TomographyManagerThread(self)
+        self.dm_thread.new_message.connect(self._new_message)
 
         input_handling_functions = self._input_handling_functions()
         for signal in input_handling_functions.keys():
@@ -406,6 +404,12 @@ class Main(QMainWindow, Ui_MainWindow):  # TODO: client for Soloist
         self.statusbar.start_progress(self.loading_queue.qsize())
         self.loading_thread.wake()
 
+    def save_image(self, arr_im_id, ftype, kwargs):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save images", "",
+                                                   save_formats_strings[ftype], )
+        if file_path != "":
+            self.saving_queue.put((arr_im_id, ftype, file_path, kwargs))
+
     def _cb_save_handler(self):
         if self.curr_image is None:
             return
@@ -421,13 +425,7 @@ class Main(QMainWindow, Ui_MainWindow):  # TODO: client for Soloist
         #     kwargs['header'] = header
 
         if combo == "current":
-            file_path, _ = QFileDialog.getSaveFileName(self, "Save images", "",
-                                                       save_formats_strings[ftype], )
-            if file_path != "":
-                arr = self.curr_image.array
-                name = file_path.split("/")[-1][:-4]
-                file_path = "/".join(file_path.split("/")[:-1])
-                get_save_image(ftype)(arr, name, file_path, **kwargs)
+            self.save_image(self.curr_image.id_, ftype, kwargs)
         else:
             file_path = QFileDialog.getExistingDirectory(self, f"Save images from {combo}", "")
             if file_path != "":
@@ -585,17 +583,19 @@ class Main(QMainWindow, Ui_MainWindow):  # TODO: client for Soloist
 
     def _tomography_handler(self):
         self.dm_thread.start()
-        self.dm_window = DetectorManagerWidget(None, self.dm_thread)
-        self.dm_thread.detector_initialized.connect(self.dm_window.detector_initialized)
+        self.dm_window = TomographyManagerWidget(None, self)
+        self.dm_thread.worker_initialized.connect(lambda args: self.dm_window.worker_initialized(*args))
+        self.dm_window.new_image.connect(lambda args: self._image_loader_handler(*args))
+        self.dm_window.new_image.connect(self._last_image_handler)
         self.dm_window.show()
 
-    def _new_message(self, *message):
+    def _new_message(self, message):
         """
         Handle new message from DetectorManagerThread
         :param message: message to log
         """
         if self.dm_window is not None:
-            self.dm_window.new_message(message, LogTypes.Log)
+            self.dm_window.new_message(*message)
         else:
             self.log(*message)
 

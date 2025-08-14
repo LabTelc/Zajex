@@ -444,8 +444,7 @@ def define_dest_buffers(handle, dest_buffer, frames, rows, columns):
     return ret
 
 
-def acquire_offset_image(handle, offset_data, rows=2048, cols=2048, frames=1):
-    # offset_data=(c_ushort * 2048 * 2048)()
+def acquire_offset_image(handle, rows, cols, frames):
     """
     
     This function acquires nFrames,adds them in a 32 bit buffer acquisition the data values
@@ -474,8 +473,33 @@ def acquire_offset_image(handle, offset_data, rows=2048, cols=2048, frames=1):
         information call Acquisition_GetErrorCode.
     
     """
+    offset_data = (c_ulong * (rows * cols))()  # create a buffer for offset data
     ret = xis.Acquisition_Acquire_OffsetImage(handle, byref(offset_data), rows, cols, frames)
     return ret, offset_data
+
+
+def acquire_gain_image(handle, offset_data, rows, cols, frames):
+    """
+    This function acquires nFrames which are all offset corrected by data stored in pOffsetData. After that the gain data are added
+    in a 32 bit buffer and after acquisition the data values are divided by nFrames (averaging). After averaging the data are further
+    processed for subsequent gain correction of image data. See mathematical description of corrections in XIS reference manual
+    for a description of the gain data format. At the end of the acquisition time the gain data are also accessible via pdwGainData.
+    The offset data is necessary to derive a valid gain image.
+
+    input parameters:
+    handle
+        Pointer to acquisition descriptor structure
+    offset_data
+        Pointer to an acquisition buffer for offset data
+    nFrames
+        Number of frames to acquire
+    nRows, nCols
+        Number of rows and columns of the offset data buffer. If the values are not suitable to the
+        current connected sensor the function return with an error
+    """
+    gain_data = (c_ulong * (rows * cols))()
+    ret = xis.Acquisition_Acquire_GainImage(handle, byref(offset_data), byref(gain_data), rows, cols, frames)
+    return ret, gain_data
 
 
 def create_pixel_map(data, data_rows, data_columns):
@@ -909,3 +933,11 @@ def get_error_code(handle):
     board_error = DWORD()
     ret = xis.Acquisition_GetErrorCode(handle, his_error, board_error)
     return ret, his_error.value, board_error.value
+
+
+def end_frame_callback():
+    pass
+
+
+def end_acq_callback():
+    pass

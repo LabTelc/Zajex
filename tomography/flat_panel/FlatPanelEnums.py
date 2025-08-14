@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Vopalensky
-@author: Zajicek
-"""
+try:
+    from tomography.my_enum import MyEnum
+except ImportError:
+    from my_enum import MyEnum
+import os
 
-
-class Sort:
+class Sort(MyEnum):
     """
     Sorting definitions for the XIS library.
     """
@@ -26,7 +26,7 @@ class Sort:
     sort_14 = 14  #
 
 
-class Sequence:
+class Sequence(MyEnum):
     """
         Sequence definitions for the XIS library.
         """
@@ -41,7 +41,7 @@ class Sequence:
     AVERAGESEQ = 0x4000  # sequence of averaged frames
 
 
-class CommChannel:
+class CommChannel(MyEnum):
     NONE = 0x00
     ELTEC_XRD_FGe = 0x01
     ELTEC_XRD_FGX = 0x08
@@ -49,24 +49,8 @@ class CommChannel:
     ELTEC_GbIF = 0x20
     ELTEC_EMBEDDED = 0x60
 
-    _reverse_dict = None
 
-    @classmethod
-    def _build_reverse_dict(cls):
-        if not cls._reverse_dict:
-            cls._reverse_dict = {
-                getattr(cls, attr): attr
-                for attr in dir(cls)
-                if attr.isupper()
-            }
-
-    @staticmethod
-    def name(value):
-        CommChannel._build_reverse_dict()
-        return CommChannel._reverse_dict.get(value, "UNKNOWN")
-
-
-class SyncMode:
+class SyncMode(MyEnum):
     """
     Synchronization modes for the XIS library.
     """
@@ -85,7 +69,7 @@ class SyncMode:
 #     FPGA = 0x7F
 
 
-class BoardType:
+class BoardType(MyEnum):
     NOONE = 0x0
     ELTEC = 0x1
     DIPIX = 0x2
@@ -97,7 +81,7 @@ class BoardType:
     ELTEC_GbIF = 0x20
 
 
-class XisDetectorSupportOptions:
+class XisDetectorSupportOptions(MyEnum):
     """
     Detector supported options for the XIS library.
     """
@@ -113,7 +97,7 @@ class XisDetectorSupportOptions:
     LIVEBUFFERSIZE = 0xA
 
 
-class BinningMode:
+class BinningMode(MyEnum):
     """
     Binning modes for the XIS library.
     """
@@ -127,7 +111,7 @@ class BinningMode:
     B_SUM = 0x200
 
 
-class TriggerMode:
+class TriggerMode(MyEnum):
     """
     Trigger modes for the XIS library.
     """
@@ -141,7 +125,7 @@ class TriggerMode:
     DualEnergy = 7  # Dual energy with post offset- XRPAD2 only
 
 
-class GbIFInitType:
+class GbIFInitType(MyEnum):
     """
     To identify of which type the parameter cAddress
     """
@@ -150,7 +134,7 @@ class GbIFInitType:
     NAME = 3
 
 
-class Gain_16x0_AM:
+class Gain_16x0_AM(MyEnum):
     """
     Gain settings for the 16x0 AM series tomography, in Farads.
     """
@@ -161,7 +145,7 @@ class Gain_16x0_AM:
     g_10p = 8
 
 
-class Gain_NOP_Series:
+class Gain_NOP_Series(MyEnum):
     """
     Gain settings for the xN/xO/xP series tomography, in Farads.
     """
@@ -173,7 +157,8 @@ class Gain_NOP_Series:
     g_8p = 5
 
 
-class FunctionCode:
+class FunctionCode(MyEnum):
+    server_connect = 1000
     gb_if_get_device_count = 0
     gb_if_get_device_list = 1
     gb_if_init = 2
@@ -191,48 +176,36 @@ class FunctionCode:
     get_hw_header_info = 14
     define_dest_buffers = 15
     acquire_offset_image = 16
-    create_pixel_map = 17
-    acquire_image = 18
-    set_camera_mode = 19
-    set_camera_gain = 20
-    set_camera_binning_mode = 21
-    get_camera_binning_mode = 22
-    set_camera_trigger_mode = 23
-    get_camera_trigger_mode = 24
-    set_callbacks_and_messages = 25
-    get_ready = 26
-    set_ready = 27
-    is_acquiring_data = 28
-    get_acq_data = 29
-    get_act_frame = 30
-    close = 31
-    close_all = 32
-    abort = 33
-    set_timer_sync = 34
-    set_frame_sync_mode = 35
-    enum_sensors = 36
-    get_next_sensor = 37
-    init = 38
-    get_error_code = 39
-
-    _reverse_dict = None
-
-    @classmethod
-    def _build_reverse_dict(cls):
-        if not cls._reverse_dict:
-            cls._reverse_dict = {
-                getattr(cls, attr): attr
-                for attr in dir(cls)
-                if not attr.startswith("_")
-            }
-
-    @staticmethod
-    def name(value):
-        FunctionCode._build_reverse_dict()
-        return FunctionCode._reverse_dict.get(value, "UNKNOWN")
+    acquire_gain_image = 17
+    create_pixel_map = 18
+    acquire_image = 19
+    set_camera_mode = 20
+    set_camera_gain = 21
+    set_camera_binning_mode = 22
+    get_camera_binning_mode = 23
+    set_camera_trigger_mode = 24
+    get_camera_trigger_mode = 25
+    set_callbacks_and_messages = 26
+    get_ready = 27
+    set_ready = 28
+    is_acquiring_data = 29
+    get_acq_data = 30
+    get_act_frame = 31
+    close = 32
+    close_all = 33
+    abort = 34
+    set_timer_sync = 35
+    set_frame_sync_mode = 36
+    enum_sensors = 37
+    get_next_sensor = 38
+    get_comm_channel = 39
+    init = 40
+    get_error_code = 41
+    end_frame_callback = 42
+    end_acq_callback = 43
 
 
-class ErrorCodes:
+class ErrorCode(MyEnum):
     """
     Error codes for the XIS library.
     """
@@ -387,19 +360,3 @@ class ErrorCodes:
     XRPD_SET_TEMPERATURE_TIMEOUT = 126
     XRPD_SET_WLAN_CC = 150
     XRPD_VERIFY_GENUINENESS = 124
-
-    _reverse_dict = None
-
-    @classmethod
-    def _build_reverse_dict(cls):
-        if not cls._reverse_dict:
-            cls._reverse_dict = {
-                getattr(cls, attr): attr
-                for attr in dir(cls)
-                if attr.isupper()
-            }
-
-    @staticmethod
-    def name(value):
-        ErrorCodes._build_reverse_dict()
-        return ErrorCodes._reverse_dict.get(value, "UNKNOWN")

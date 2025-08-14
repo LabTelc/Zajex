@@ -1,0 +1,8 @@
+icon_abort = "./tomography/ui_elements/icons/abort.svg"
+icon_acknowledge = "./tomography/ui_elements/icons/acknowledge.svg"
+icon_disable = "./tomography/ui_elements/icons/disable.svg"
+icon_enable = "./tomography/ui_elements/icons/enable.svg"
+icon_home = "./tomography/ui_elements/icons/home.svg"
+icon_left = "./tomography/ui_elements/icons/left.svg"
+icon_reset = "./tomography/ui_elements/icons/reset.svg"
+icon_right = "./tomography/ui_elements/icons/right.svg"
