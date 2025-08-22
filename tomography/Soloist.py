@@ -38,8 +38,8 @@ print("Table ready for commands.")
 def feedback_thread():
     while True:
         try:
-            perform_function_call(sock, get_program_position_feedback, handle)
-            perform_function_call(sock, get_axis_status, handle)
+            perform_function_call(sock, get_program_position_feedback, handle, log=False)
+            perform_function_call(sock, get_axis_status, handle, log=False)
             time.sleep(0.1)
         except Exception as e:
             print("Error in feedback thread:", e)

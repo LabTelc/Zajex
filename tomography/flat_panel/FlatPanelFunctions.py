@@ -508,15 +508,15 @@ def create_pixel_map(data, data_rows, data_columns):
     """
     corr_list_size = c_int()
     corr_list = 0
-    xis.Acquisition_CreatePixelMap(byref(data), data_rows, data_columns, corr_list,
-                                   byref(corr_list_size))  # first call for identification of necessary buffer length
+    ret = xis.Acquisition_CreatePixelMap(byref(data), data_rows, data_columns, corr_list, byref(corr_list_size))  # first call for identification of necessary buffer length
+    if ret != ErrorCode.OK:
+        return ret, None, None
+    corr_list = (c_int * (data_columns * data_rows))()  # construction of the buffer
 
-    corr_list = (c_int * corr_list_size.value)()  # construction of the buffer
-
-    xis.Acquisition_CreatePixelMap(byref(data), data_rows, data_columns, byref(corr_list),
+    ret = xis.Acquisition_CreatePixelMap(byref(data), data_rows, data_columns, byref(corr_list),
                                    byref(corr_list_size))  # second call returning buffer
 
-    return corr_list, corr_list_size.value
+    return ret, corr_list, corr_list_size.value
 
 
 def acquire_image(handle, frames, skip_frames=0, seq_options=Sequence.DEST_ONE_FRAME, offset_data=0, gain_data=0, pixel_data=0):
@@ -573,8 +573,14 @@ def acquire_image(handle, frames, skip_frames=0, seq_options=Sequence.DEST_ONE_F
         If the function is successful it returns zero, otherwise an error code. To get extended
         information call Acquisition_GetErrorCode.
     """
-    return xis.Acquisition_Acquire_Image(handle, frames, skip_frames, seq_options, offset_data, gain_data,
-                                         pixel_data)
+    return xis.Acquisition_Acquire_Image(handle, frames, skip_frames, seq_options, offset_data, gain_data, pixel_data)
+
+def acquire_image_preloaded_corrections(handle, frames, skip_images, seq_options=Sequence.DEST_ONE_FRAME):
+    """
+     The function provides the same functionality as Acquisition_Acquire_Image except it does not load new correction data. Use
+        Acquisition_SetCorrData_Ex before to set the correction data.
+    """
+    return xis.Acquisition_Acquire_Image_PreloadCorr(handle, frames, skip_images, seq_options)
 
 
 def set_camera_mode(handle, mode):

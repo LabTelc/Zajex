@@ -1,6 +1,7 @@
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.uic import loadUiType
+from matplotlib.lines import drawStyles
 
 from tomography.flat_panel import FunctionCode, ErrorCode, Gain_NOP_Series, BinningMode
 from ui_elements import icon_load, icon_add
@@ -17,10 +18,11 @@ class XRD1611Widget(QWidget, UI_XRD1611Widget):
         super().__init__(parent)
         self.setupUi(self)
         self.queue = queue
-        self.image_buffer = np.zeros((4096,4096), np.uint32)
         self.last_image = None
         self.image_number = 0
         self.sequence_number = 0
+        self.current_id = -1
+        self.is_acquiring = False
         self.ob_image = None
         self.df_image = None
         self.bpm_image = None
@@ -49,15 +51,14 @@ class XRD1611Widget(QWidget, UI_XRD1611Widget):
 
     def new_message(self, func_code, status_code, payload):
         if status_code == ErrorCode.OK:
-            self.log(FunctionCode.name(func_code))
+            self.log(f"{FunctionCode.name(func_code)}: {payload}")
             if func_code == FunctionCode.end_frame_callback:
-                self.image_buffer += payload
+                self.new_image_acquired(payload,f"XRD1611/Image_{self.image_number:04d}_{self.sequence_number:04d}")
                 self.sequence_number += 1
             elif func_code == FunctionCode.end_acq_callback:
-                self.new_image_acquired(np.uint16(self.image_buffer / self.sequence_number),
-                                        f"XRD1611/Sequence_{self.sequence_number:04d}")
-                self.sequence_number = 0
+                self.new_image_acquired(payload,f"XRD1611/Image_{self.image_number:04d}_{self.sequence_number:04d}")
                 self.image_number += 1
+                self.is_acquiring = False
         else:
             self.log(f"Error in function {FunctionCode.name(func_code)}: {ErrorCode.name(status_code)}", LogTypes.Error)
 
@@ -84,6 +85,11 @@ class XRD1611Widget(QWidget, UI_XRD1611Widget):
         self.queue.put((FunctionCode.set_timer_sync, (1000*value,)))
 
     def _acquire_handler(self):
+        if self.is_acquiring:
+            self.log("Still acquiring", LogTypes.Warning)
+            return
+        self.current_id = -1
+        self.is_acquiring = True
         if self.cb_exp_mode.currentText() == "Frames":
             for i in range(self.sb_num_frames.value()):
                 self.queue.put((FunctionCode.acquire_image, (1,)))

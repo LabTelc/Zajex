@@ -155,7 +155,6 @@ def pack_command(*args):
 
 
 def unpack_command(payload_bytes):
-    import ctypes
     num_args = struct.unpack('!I', payload_bytes[:4])[0]
     args = []
     offset = 4

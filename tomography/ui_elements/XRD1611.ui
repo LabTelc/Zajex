@@ -129,17 +129,7 @@
             </item>
             <item>
              <property name="text">
-              <string>2x1</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
               <string>2x2</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>4x1</string>
              </property>
             </item>
             <item>
@@ -234,7 +224,7 @@
         <string>First corrections are applied then the image goes to preview</string>
        </property>
        <property name="title">
-        <string>Corrections</string>
+        <string>Corrections [4096 x 4096]</string>
        </property>
        <property name="checkable">
         <bool>true</bool>

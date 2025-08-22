@@ -1,5 +1,7 @@
 def get_perf_function_call(error_code, function_code, success, send_message):
     def perform_function_call(sock, function, *args, **kwargs):
+        log = kwargs.pop('log', True)
+        response_type = kwargs.pop('response', "response")
         ret = function(*args)
         response = None
         if isinstance(ret, tuple):
@@ -8,12 +10,18 @@ def get_perf_function_call(error_code, function_code, success, send_message):
             response = response[0]
         if ret != success:
             print("Error in {} call: {}".format(function, error_code.name(ret)))
-            send_message(sock, getattr(function_code, function.__name__), ret, response)
+            fn_name = function.__name__ if not function.__name__.endswith("_local") else function.__name__[:-len("_local")]
+            send_message(sock, getattr(function_code, fn_name), ret, response)
             if "failure" in kwargs:
                 exit(1)
         else:
-            print("Function {}{} executed successfully.".format(function.__name__, args))
-            send_message(sock, getattr(function_code, function.__name__), ret, response)
+            if log:
+                print("Function {}{} executed successfully.".format(function.__name__, args[1:]))
+            fn_name = function.__name__ if not function.__name__.endswith("_local") else function.__name__[:-len("_local")]
+            if response_type == "response":
+                send_message(sock, getattr(function_code, fn_name), ret, response)
+            else:
+                send_message(sock, getattr(function_code, fn_name), ret, args[1:])
         return response
 
     return perform_function_call
@@ -28,6 +36,3 @@ def get_config():
     config.read('utils/config.ini')
     return config
 
-
-def ctypes_array_type_convert(data, new_type):
-    return  (new_type * len(data))(*[new_type(x.value).value for x in data])

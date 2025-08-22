@@ -452,24 +452,13 @@ class Main(QMainWindow, Ui_MainWindow):
         text = self.le_operation.text()
         combo = self.combo_boxes['d']
         slider = self.sliders['d']
-        fp_a, fp_b, fp_c = "", "", ""
+        fp_a, fp_b, fp_c, fp_d = "", "", "", ""
 
-        if self.combo_boxes['a'].count() > 0:
-            im_a = self.images[self.combo_boxes['a'].get_current_item().data(Qt.UserRole, )]
-            A = a = im_a.array
-            fp_a = im_a.filepath
-        if self.combo_boxes['b'].count() > 0:
-            im_b = self.images[self.combo_boxes['b'].get_current_item().data(Qt.UserRole, )]
-            B = b = im_b.array
-            fp_b = im_b.filepath
-        if self.combo_boxes['c'].count() > 0:
-            im_c = self.images[self.combo_boxes['c'].get_current_item().data(Qt.UserRole, )]
-            C = c = im_c.array
-            fp_c = im_c.filepath
-        if self.combo_boxes['d'].count() > 0:
-            im_c = self.images[self.combo_boxes['c'].get_current_item().data(Qt.UserRole, )]
-            C = c = im_c.array
-            fp_c = im_c.filepath
+        for slot in ["a", "b", "c", "d"]:
+            if self.combo_boxes[slot].count() > 0:
+                locals()[f"im_{slot}"] = self.images[self.combo_boxes[slot].get_current_item().data(Qt.UserRole, )]
+                locals()[slot] = locals()[slot.upper()] = locals()[f"im_{slot}"].array
+                locals()[f"fp_{slot}"] = locals()[f"im_{slot}"].filepath
 
         try:
             image = eval(str(text))
@@ -494,11 +483,16 @@ class Main(QMainWindow, Ui_MainWindow):
         combo.setCurrentIndex(0)
         self.show_image(im_id)
 
-    def _image_loader_handler(self, arr, filepath, slot):
+    def _image_loader_handler(self, arr, filepath, slot, id_=-1):
         if arr is not None:
+            if id_ == -1:
+                im_id = next(self.id_gen)
+                name = filepath.split("/")[0]
+                self.sender().worker_tabs[name].current_id = im_id
+            else:
+                im_id = id_
             self.sliders[slot].blockSignals(True)
             self.combo_boxes[slot].blockSignals(True)
-            im_id = next(self.id_gen)
             img = ImageObject(arr, arr.min(), arr.max(), (0, arr.shape[1]), (arr.shape[0], 0), im_id, slot, filepath)
             self.images[im_id] = img
             self.last_image_id = im_id
@@ -595,7 +589,10 @@ class Main(QMainWindow, Ui_MainWindow):
         :param message: message to log
         """
         if self.dm_window is not None:
-            self.dm_window.new_message(*message)
+            try:
+                self.dm_window.new_message(*message)
+            except Exception as e:
+                self.log(e, LogTypes.Error)
         else:
             self.log(*message)
 
@@ -640,7 +637,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.saving_thread.requestInterruption()
         self.saving_thread.wake()
         if self.dm_thread.isRunning():
-            self.dm_thread.requestInterruption()
+            self.dm_thread.wake()
+            self.dm_thread.wait()
         event.accept()
         app.exit(0)
 

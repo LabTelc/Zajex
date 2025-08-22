@@ -5,9 +5,9 @@ import select
 from threading import Thread
 import numpy as np
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition
 
-from utils import get_config, LogTypes
+from utils import get_config
 from tomography.Socket import recv_unpack_message, send_message
 from tomography.flat_panel import FlatPanelEnums
 from tomography.soloist import SoloistEnums
@@ -24,6 +24,8 @@ class TomographyManagerThread(QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.mutex = QMutex()
+        self.condition = QWaitCondition()
         self._socket = socket(AF_INET, SOCK_STREAM)
         self._worker_processes = []
         self._worker_threads = []
@@ -75,26 +77,37 @@ class TomographyManagerThread(QThread):
             self.new_message.emit(("TomographyManager", 0, f"Starting {detector} detector"))
             with open(f"logs/{detector}.log", "w") as logfile:
                 self._queues[detector.lower()] = Queue()
-                w = subprocess.Popen(f"{python_27} tomography/{detector}.py", stdout=logfile, stderr=logfile)
+                w = subprocess.Popen(f"{python_27} tomography/{detector}.py", stdout=logfile, stderr=logfile,
+                                     creationflags=subprocess.CREATE_NO_WINDOW)
                 self._worker_processes.append(w)
 
         for table in tables:
             self.new_message.emit(("TomographyManager", 0, f"Starting {table} table"))
             with open(f"logs/{table}.log", "w") as logfile:
                 self._queues[table.lower()] = Queue()
-                w = subprocess.Popen(f"{python_27} tomography/{table}.py", stdout=logfile, stderr=logfile)
+                w = subprocess.Popen(f"{python_27} tomography/{table}.py", stdout=logfile, stderr=logfile,
+                                     creationflags=subprocess.CREATE_NO_WINDOW)
                 self._worker_processes.append(w)
 
-        while not self.isInterruptionRequested():
+        for _ in range(len(self._worker_processes)):
             worker_socket, address = self._socket.accept()
             worker = Thread(target=self.handle_worker, args=(worker_socket,))
+            worker.daemon = True
             self._worker_threads.append(worker)
             worker.start()
-            self.new_message.emit(("TomographyManager", 0,f"Accepted connection from {address}"))
+            self.new_message.emit(("TomographyManager", 0, f"Accepted connection from {address}"))
 
-        for worker in self._worker_threads:
-            worker.join()
-
+        self.wait_for_signal()
         for process in self._worker_processes:
             process.terminate()
             process.wait()
+
+    def wait_for_signal(self):
+        self.mutex.lock()
+        self.condition.wait(self.mutex)
+        self.mutex.unlock()
+
+    def wake(self):
+        self.mutex.lock()
+        self.condition.wakeAll()
+        self.mutex.unlock()

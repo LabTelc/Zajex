@@ -203,6 +203,7 @@ class FunctionCode(MyEnum):
     get_error_code = 41
     end_frame_callback = 42
     end_acq_callback = 43
+    acquire_image_preloaded_corrections = 44
 
 
 class ErrorCode(MyEnum):
